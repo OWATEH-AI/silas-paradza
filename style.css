@@ -680,19 +680,32 @@ h5 { font-size: var(--text-lg); }
   overflow: hidden;
   aspect-ratio: 4 / 3;
   background: #0b0f1a;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.6);
+}
+
+/* Cinematic dark gradient edges to blend into layout */
+.portrait-slideshow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(15, 23, 42, 0.35) 0%, rgba(15, 23, 42, 0) 15%, rgba(15, 23, 42, 0) 85%, rgba(15, 23, 42, 0.45) 100%);
+  z-index: 3;
+  pointer-events: none;
 }
 
 .portrait-slide {
   position: absolute;
   inset: 0;
   opacity: 0;
-  transition: opacity 0.8s ease;
+  transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
+  overflow: hidden;
 }
 
 .portrait-slide.active {
   opacity: 1;
   pointer-events: auto;
+  z-index: 2;
 }
 
 .portrait-slide img {
@@ -701,58 +714,22 @@ h5 { font-size: var(--text-lg); }
   object-fit: cover;
   object-position: center top;
   display: block;
+  transform: scale(1.0);
+  will-change: transform;
 }
 
-/* Slideshow arrows */
-.portrait-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(212, 175, 55, 0.4);
-  color: #fff;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
+/* Premium Ken Burns Zoom Animation */
+.portrait-slide.active img {
+  animation: kenBurnsEffect 5.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
-.portrait-arrow:hover {
-  background: rgba(212, 175, 55, 0.3);
-  border-color: var(--color-gold);
-}
-
-.portrait-arrow--prev { left: 10px; }
-.portrait-arrow--next { right: 10px; }
-
-/* Slideshow dots */
-.portrait-dots {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 6px;
-  z-index: 10;
-}
-
-.portrait-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.4);
-  cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
-}
-
-.portrait-dot.active {
-  background: var(--color-gold);
-  transform: scale(1.3);
+@keyframes kenBurnsEffect {
+  0% {
+    transform: scale(1.0);
+  }
+  100% {
+    transform: scale(1.12);
+  }
 }
 
 .about__motto {

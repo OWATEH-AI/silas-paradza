@@ -508,28 +508,20 @@ ${message}`;
 
   if (portraitSlideshow) {
     const pSlides = portraitSlideshow.querySelectorAll(".portrait-slide");
-    const pDots   = portraitSlideshow.querySelectorAll(".portrait-dot");
     let pCurrent  = 0;
     let pTimer    = null;
     const P_INTERVAL = 4000;
 
     const goToSlide = (index) => {
       pSlides[pCurrent].classList.remove("active");
-      pDots[pCurrent].classList.remove("active");
       pCurrent = (index + pSlides.length) % pSlides.length;
       pSlides[pCurrent].classList.add("active");
-      pDots[pCurrent].classList.add("active");
     };
 
     const startAuto = () => {
       clearInterval(pTimer);
       pTimer = setInterval(() => goToSlide(pCurrent + 1), P_INTERVAL);
     };
-
-    // Dot clicks
-    pDots.forEach((dot, i) => {
-      dot.addEventListener("click", () => { goToSlide(i); startAuto(); });
-    });
 
     // Begin auto-play
     startAuto();
