@@ -403,8 +403,8 @@
             
             <div class="mining-features grid-2">
               <div class="feature-item">
-                <h5>Resource Development</h5>
-                <p>Identifying, mapping, and opening new reserve deposits across targeted Midlands locations.</p>
+                <h5>Resource Development & Pegging</h5>
+                <p>Identifying, mapping, and officially pegging new mineral claims across targeted Midlands locations.</p>
               </div>
               <div class="feature-item">
                 <h5>Equipment Solutions</h5>
@@ -438,8 +438,8 @@
               <img class="division-card__img" src="zRNBwyCdXJLADnhKk2DL6BvWavuKr0713ZK7MDI2_WaP7uDAghJy4-Uq4klFYIxPjM-c8BR0P4O_b5DCMacMLob_EsbAnlrR4Zngl-DnzGIzExKyxdS4dADXH-7kKByYFhX2ZsMvBQazTBUnQlNlNM06DSb49f6l-lxaSvxavNg.jpg" alt="Excavation and operations site detail" loading="lazy" />
             </div>
             <div class="division-card__content">
-              <h4>Resource Extraction</h4>
-              <p>Advanced geological assessments coupled with systematic removal methods maximize mineral quality, grade recovery, and operational throughput.</p>
+              <h4>Claim Pegging & Extraction</h4>
+              <p>Handling professional claim pegging, boundary mapping, and regulatory registration, followed by systematic ore extraction maximizing grade recovery and throughput.</p>
             </div>
           </div>
           <div class="division-card">
@@ -893,6 +893,22 @@
       <button class="lightbox__next" aria-label="Next Image">&#10095;</button>
     </div>
 
+    <!-- Custom Article Overlay Modal -->
+    <div id="article-modal" class="article-modal" aria-hidden="true" role="dialog">
+      <div class="article-modal__overlay" id="article-modal-overlay"></div>
+      <div class="article-modal__container">
+        <button class="article-modal__close" id="article-modal-close" aria-label="Close Article">&times;</button>
+        <div class="article-modal__body">
+          <div class="article-modal__image-wrapper">
+            <img id="article-modal-image" src="" alt="Article Banner" />
+          </div>
+          <div class="article-modal__meta" id="article-modal-meta"></div>
+          <h3 class="article-modal__title" id="article-modal-title"></h3>
+          <div class="article-modal__text" id="article-modal-text"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- News & Insights Section -->
     <section class="section news-section" id="news">
       <div class="container">
@@ -910,9 +926,9 @@
             </div>
             <div class="news-card__body">
               <span class="news-card__meta">June 11, 2026 • Logistics Trends</span>
-              <h3 class="news-card__title"><a href="#news">Optimizing Bulk Ore Transit Along the Beira Corridor</a></h3>
+              <h3 class="news-card__title"><a href="#news" data-article="1">Optimizing Bulk Ore Transit Along the Beira Corridor</a></h3>
               <p class="news-card__excerpt">An in-depth look at how infrastructure improvements and digitized customs clearing are reducing transit delays for raw materials crossing SADC routes.</p>
-              <a href="#news" class="news-card__more-btn">Read Article &rarr;</a>
+              <a href="#news" class="news-card__more-btn" data-article="1">Read Article &rarr;</a>
             </div>
           </article>
           
@@ -923,9 +939,9 @@
             </div>
             <div class="news-card__body">
               <span class="news-card__meta">May 24, 2026 • Mining & Economy</span>
-              <h3 class="news-card__title"><a href="#news">Zimbabwe's Mineral Value Addition: Future Pathways</a></h3>
+              <h3 class="news-card__title"><a href="#news" data-article="2">Zimbabwe's Mineral Value Addition: Future Pathways</a></h3>
               <p class="news-card__excerpt">Why regional mineral processing and value addition hubs are critical to bolstering national GDP and empowering local communities in Midlands Province.</p>
-              <a href="#news" class="news-card__more-btn">Read Article &rarr;</a>
+              <a href="#news" class="news-card__more-btn" data-article="2">Read Article &rarr;</a>
             </div>
           </article>
 
@@ -936,9 +952,9 @@
             </div>
             <div class="news-card__body">
               <span class="news-card__meta">April 12, 2026 • Business Development</span>
-              <h3 class="news-card__title"><a href="#news">Developing Joint Ventures in Resource Sectors</a></h3>
+              <h3 class="news-card__title"><a href="#news" data-article="3">Developing Joint Ventures in Resource Sectors</a></h3>
               <p class="news-card__excerpt">Guidelines for building sustainable business alliances between local Zimbabwean entrepreneurs and international institutional investors.</p>
-              <a href="#news" class="news-card__more-btn">Read Article &rarr;</a>
+              <a href="#news" class="news-card__more-btn" data-article="3">Read Article &rarr;</a>
             </div>
           </article>
         </div>

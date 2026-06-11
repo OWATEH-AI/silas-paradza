@@ -527,4 +527,95 @@ ${message}`;
     startAuto();
   }
 
+  /* ==========================================================================
+     9. NEWS & ARTICLES MODAL POPUP
+     ========================================================================== */
+  const articlesData = {
+    "1": {
+      title: "Optimizing Bulk Ore Transit Along the Beira Corridor",
+      meta: "June 11, 2026 • Logistics Trends",
+      image: "tAEB-79qS_e6Fi4XFrZMIHkbaT-4dI-TTtz_IRHVsqJ06q0TYK2FP-1RIYWBCHS64zCkvdIyDRmc6BUMocLS9GDTJpNLTn7J8EBcvjPTLQw8x5P_AOtEv6W6d2G5Iw1sv62F0CUZ2xvoYL0dZc-dfCHApH_zRn3MYlB2dkkye8I.jpg",
+      text: `
+        <p>Efficient movement of mineral reserves across the Southern African Development Community (SADC) is a vital economic catalyst. As one of the shortest transport channels linking landlocked Zimbabwe to international maritime markets, the Beira Corridor has seen major operational interest over the past decade.</p>
+        <p>Recent infrastructure upgrades at the Port of Beira in Mozambique—coupled with the digitization of customs clearance procedures at key border posts like the Forbes Border Post in Mutare—are systematically decreasing truck turnaround times. Historically, freight operators encountered multi-day clearance lines that compromised logistics predictability and increased cargo security expenses.</p>
+        <p>By implementing real-time fleet telematics, automated weighing protocols, and unified border systems, mineral logistics providers can now route bulk ores (such as chrome and gold concentrates) from the Midlands Province directly to Mozambican berths with minimized delays. Silas Paradza's logistics division remains at the forefront of these corridor developments, utilizing progressive transport strategies to provide rapid, secure border crossings and dependable freight timelines for resource partners across the SADC region.</p>
+      `
+    },
+    "2": {
+      title: "Zimbabwe's Mineral Value Addition: Future Pathways",
+      meta: "May 24, 2026 • Mining & Economy",
+      image: "amkZxVC9UYaft_4EB-XXpkKAJFQUAE4xu1ThQYuzY85JOKTB9tQBoBsy920ts3wntI-v3lSUtGtl4IzHEiaynb-7OWDkNtgEq0LAlTJ6BIZ1jOrxUbCPsqHC87Vm-wcDtA4aztchpCpOkil1MChNNDrLwF5C-lsZqfkHU0OPU71xIMm4bn5ZHvc1r2xEH2uK.jpg",
+      text: `
+        <p>Historically, Africa's resource-rich economies have exported raw minerals, capturing only a fraction of the value chain. In Zimbabwe, the shift toward local mineral processing, smelting, and refining is a key pillar of national economic strategy.</p>
+        <p>Establishing domestic smelting facilities to process raw chrome ore into high-grade ferrochrome, and gold refinery hubs to purify gold bullion locally, has a transformative impact. This local value addition significantly increases export prices, generating higher national revenue and fostering industrial growth.</p>
+        <p>Beyond macroeconomic indicators, regional value addition creates highly skilled jobs, spurs technological development, and supports local communities in the Midlands Province. Silas Paradza is committed to aligning his mining operations with this national vision, investing in community rehabilitation programs, partnering with local processors, and prioritizing sustainable extraction technologies that prepare raw reserves for high-value domestic refinement.</p>
+      `
+    },
+    "3": {
+      title: "Developing Joint Ventures in Resource Sectors",
+      meta: "April 12, 2026 • Business Development",
+      image: "zSYmzosLcB1m_Vu3QlDLNI_EZxBduWJjRUdfsXWVHKY4u4qQBQ5HAhR83fn-5GBAEKMbmDLBt3OAtAXcTL0RqOagWPbY6Tt4hhYjPKEgrPx9FJpUorM5CtTFP1xt23MUzZRFrMfhL1dlKplnt7db6-dk6A9xP28YmdXjpr1lD7o.jpg",
+      text: `
+        <p>Developing successful natural resource ventures requires combining capital, specialized machinery, and local operational expertise. For global institutional investors, partnering with experienced local operators is the most effective way to navigate regulatory structures and ensure project viability.</p>
+        <p>A key phase in any Zimbabwean mining venture is claim pegging. Staking a mining claim involves surveying, officially pegging the boundaries, and registering the claim with the Ministry of Mines and Mining Development. Silas Paradza's teams handle this critical technical and regulatory step, ensuring legal compliance, community alignment, and secure title acquisition before extraction begins.</p>
+        <p>Sustainable joint ventures rely on clear stakeholder alignments, environmental responsibility, and structural transparency. By combining local geological knowledge and pegging expertise with international capital, partnerships can unlock major chrome and gold opportunities in the Midlands, driving regional development and delivering strong returns for investors.</p>
+      `
+    }
+  };
+
+  const articleModal = document.getElementById("article-modal");
+  const articleModalClose = document.getElementById("article-modal-close");
+  const articleModalOverlay = document.getElementById("article-modal-overlay");
+
+  if (articleModal) {
+    const titleEl = document.getElementById("article-modal-title");
+    const metaEl = document.getElementById("article-modal-meta");
+    const imgEl = document.getElementById("article-modal-image");
+    const textEl = document.getElementById("article-modal-text");
+
+    const openArticle = (id) => {
+      const article = articlesData[id];
+      if (article) {
+        titleEl.textContent = article.title;
+        metaEl.textContent = article.meta;
+        imgEl.src = article.image;
+        textEl.innerHTML = article.text;
+
+        articleModal.classList.add("active");
+        articleModal.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden"; // Prevent background scroll
+      }
+    };
+
+    const closeArticle = () => {
+      articleModal.classList.remove("active");
+      articleModal.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = ""; // Restore scroll
+    };
+
+    // Attach listeners to all Read Article triggers
+    document.querySelectorAll("[data-article]").forEach((trigger) => {
+      trigger.addEventListener("click", (e) => {
+        e.preventDefault();
+        const articleId = trigger.getAttribute("data-article");
+        openArticle(articleId);
+      });
+    });
+
+    // Close triggers
+    if (articleModalClose) {
+      articleModalClose.addEventListener("click", closeArticle);
+    }
+    if (articleModalOverlay) {
+      articleModalOverlay.addEventListener("click", closeArticle);
+    }
+
+    // Esc key close
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && articleModal.classList.contains("active")) {
+        closeArticle();
+      }
+    });
+  }
+
 });
