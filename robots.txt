@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+
+# Prevent indexing of developer credit or private directories if any
+Disallow: /.git/
+Disallow: /scratch/
+
+# Allow standard search engine and AI crawlers
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+Sitemap: https://silasparadza.com/sitemap.xml

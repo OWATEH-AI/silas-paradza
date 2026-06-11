@@ -1,0 +1,28 @@
+# Silas Paradza Official Website
+
+The official website of Silas Paradza, a prominent Zimbabwean entrepreneur and business leader operating in mining, transport, and logistics.
+
+## Key Entities
+- **Subject**: Silas Paradza
+- **Roles**: Chairman, Entrepreneur, Industrialist
+- **Operations & Industries**: 
+  - **Mining Operations**: Gold mining, chrome extraction, resource management, and regional mining ventures in Gweru and the Midlands Province, Zimbabwe.
+  - **Transport & Logistics**: Cross-border logistics, heavy haulage, dry bulk shipping, supply chain integration across Southern Africa (SADC region).
+- **Makers / Developers**: Built and designed by **ARTGALZIM CENTER** in collaboration with **OWA TECHNOLOGIES**.
+- **Developer Contacts**:
+  - WhatsApp/Phone: +263 77 247 9492 / +263 71 694 4086
+- **Contact Details for Silas Paradza**:
+  - Direct Phone: +263 773 418 643
+  - Behind-the-scenes WhatsApp: +27 78 339 6385
+
+## Site Structure & Content Map
+- [/index.html](https://silasparadza.com/index.html): Main landing page representing all sections:
+  - **Home**: Welcome message and executive summary of Silas Paradza.
+  - **About Silas**: Bio of Silas Paradza, his business philosophy, and core principles. Includes a responsive slideshow of his portraits and public appearances.
+  - **Mining**: Overview of mining activities and sustainable resource development.
+  - **Transport & Logistics**: Fleet capabilities and regional distribution network.
+  - **Gallery**: Photo archive of industrial sites, logistics assets, and personal highlights.
+  - **Projects**: Summary of active investments and corporate responsibility initiatives.
+  - **News & Insights**: Industry commentary and regional press releases.
+  - **Contact**: Location map, call links, and interactive contact form with WhatsApp redirection.
+- [/credits.html](https://silasparadza.com/credits.html): Dedicated credits and engineering logs page. Details the visual architecture, performance optimizations, and developers' contact information (+263 77 247 9492 / +263 71 694 4086).

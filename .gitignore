@@ -1,0 +1,20 @@
+# OS generated files
+.DS_Store
+Thumbs.db
+db.ini
+Desktop.ini
+
+# IDE/Editor configs
+.vscode/
+.idea/
+
+# Cloudflare / build outputs
+.wrangler/
+dist/
+build/
+out/
+node_modules/
+
+# Temp/logs
+*.log
+*.tmp
