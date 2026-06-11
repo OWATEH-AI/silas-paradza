@@ -1,0 +1,7 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "silas-paradza"
+compatibility_date = "2026-06-11"
+
+[pages_build_config]
+build_command = ""
+destination_dir = "."
