@@ -148,6 +148,7 @@
           <li><a href="#about" class="header__link">About Silas</a></li>
           <li><a href="#mining" class="header__link">Mining</a></li>
           <li><a href="#logistics" class="header__link">Transport & Logistics</a></li>
+          <li class="nav-driving-school-item"><a href="#driving-school" class="header__link">Driving School</a></li>
           <li><a href="#gallery" class="header__link">Gallery</a></li>
           <li><a href="#projects" class="header__link">Projects</a></li>
           <li><a href="#news" class="header__link">News & Insights</a></li>
@@ -576,6 +577,133 @@
             <h4>Fleet Maintenance</h4>
             <p>Strict mechanical testing routines and in-house garage support guarantee minimum breakdowns and operational delays.</p>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seed Faith Driving School Section -->
+    <section class="section driving-school-section section--muted" id="driving-school">
+      <div class="container">
+        <div class="text-center section-header">
+          <span class="eyebrow reveal">Professional Training</span>
+          <h2 class="section-title reveal">Seed Faith Driving School</h2>
+          <p class="section-subtitle reveal reveal-delay-1">Comprehensive driver education and motorcycle lessons in Gweru. Equipping you with the skills, confidence, and licensing preparation to navigate roads safely.</p>
+        </div>
+
+        <div class="grid-2 driving-grid reveal">
+          <div class="driving-info flex-col justify-center gap-3">
+            <div class="operation-text-box">
+              <h3>Empowering Safe & Licensed Drivers</h3>
+              <p>At Seed Faith Driving School, we believe that safe driving is a lifetime skill. Whether you are a beginner looking to get behind the wheel for the first time, or seeking professional training to obtain a motorcycle license, our certified instructors provide structured lessons tailored to your pace.</p>
+            </div>
+            
+            <div class="driving-features grid-2">
+              <div class="feature-item">
+                <h5>Motorcycle Lessons (Class 3)</h5>
+                <p>Comprehensive training on a motorcycle, teaching balance, throttle control, signaling, and defensive road maneuvering for standard Class 3 licenses.</p>
+              </div>
+              <div class="feature-item">
+                <h5>Light Motor Vehicles (Class 4)</h5>
+                <p>Dual-pedal controlled training cars to ensure complete safety while you master steering, clutch coordination, parking maneuvers, and road safety.</p>
+              </div>
+              <div class="feature-item">
+                <h5>Defensive Driving Skills</h5>
+                <p>Go beyond the basic licensing test. Learn to anticipate hazards, manage safe following distances, and drive safely in unfavorable weather or traffic conditions.</p>
+              </div>
+              <div class="feature-item">
+                <h5>Pro License Preparation</h5>
+                <p>Preparation for both the theory test and practical road test. Mock test scenarios are conducted to build confidence and ensure first-time success.</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="driving-visual">
+            <div class="driving-gallery-grid">
+              <div class="driving-gallery-item">
+                <img src="Driving School/WhatsApp Image 2026-06-12 at 13.33.52 (1).jpeg" alt="Seed Faith Driving School Motorcycle Training" loading="lazy" />
+                <div class="driving-gallery-caption">Motorcycle Lessons (Class 3)</div>
+              </div>
+              <div class="driving-gallery-item">
+                <img src="Driving School/WhatsApp Image 2026-06-12 at 13.33.51.jpeg" alt="Seed Faith Driving School Training Vehicle" loading="lazy" />
+                <div class="driving-gallery-caption">Class 4 Vehicle Instruction</div>
+              </div>
+              <div class="driving-gallery-item">
+                <img src="Driving School/WhatsApp Image 2026-06-12 at 13.33.51 (1).jpeg" alt="Seed Faith Driving School Learning Sessions" loading="lazy" />
+                <div class="driving-gallery-caption">Practical Maneuvers</div>
+              </div>
+              <div class="driving-gallery-item">
+                <img src="Driving School/WhatsApp Image 2026-06-12 at 13.33.52.jpeg" alt="Seed Faith Driving School Safety Briefing" loading="lazy" />
+                <div class="driving-gallery-caption">Road Safety Instructions</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Driving School Registration Form -->
+        <div class="driving-form-wrapper reveal reveal-delay-1">
+          <div class="text-center form-header">
+            <h3>Apply for Driving Lessons</h3>
+            <p>Ready to start? Fill in the details below and select your preferred training package. We will validate your request and redirect you to WhatsApp to schedule your first lesson.</p>
+          </div>
+          
+          <form class="form" id="driving-school-form" novalidate>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="ds-name">Full Name *</label>
+                <input class="form-input" type="text" id="ds-name" name="name" placeholder="Enter your full name" required autocomplete="name" />
+                <span class="form-error" id="ds-name-error"></span>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label" for="ds-phone">Phone Number *</label>
+                <input class="form-input" type="tel" id="ds-phone" name="phone" placeholder="+263 773 418 643" required autocomplete="tel" />
+                <span class="form-error" id="ds-phone-error"></span>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="ds-class">Class of License *</label>
+                <select class="form-select" id="ds-class" name="class" required>
+                  <option value="" disabled selected>Select License Class</option>
+                  <option value="class-3">Class 3 (Motorcycle)</option>
+                  <option value="class-4">Class 4 (Light Motor Vehicle)</option>
+                  <option value="class-2">Class 2 (Heavy Duty Truck)</option>
+                </select>
+                <span class="form-error" id="ds-class-error"></span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="ds-package">Preferred Package *</label>
+                <select class="form-select" id="ds-package" name="package" required>
+                  <option value="" disabled selected>Select Lesson Package</option>
+                  <option value="theory">Learner's Theory Prep (ZTS)</option>
+                  <option value="lessons-5">5 Driving Lessons Package</option>
+                  <option value="lessons-10">10 Driving Lessons Package</option>
+                  <option value="lessons-15">15 Driving Lessons Package</option>
+                  <option value="full-pass">Full Licensing & Pass Package</option>
+                </select>
+                <span class="form-error" id="ds-package-error"></span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="ds-message">Your Experience & Questions</label>
+              <textarea class="form-textarea" id="ds-message" name="message" placeholder="Have you driven before? Any specific preferences or start dates?"></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn--primary btn--lg" id="ds-submit-btn">
+                Apply for Lessons
+              </button>
+            </div>
+
+            <div id="ds-form-success" class="form-success" hidden>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; vertical-align: middle; display: inline-block;">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>Registration validated! Redirecting you to WhatsApp to finalize your booking schedule...
+            </div>
+          </form>
         </div>
       </div>
     </section>
@@ -1143,6 +1271,7 @@
         <ul>
           <li><a href="#home">Home</a></li>
           <li><a href="#about">About Silas</a></li>
+          <li><a href="#driving-school">Driving School</a></li>
           <li><a href="#gallery">Gallery</a></li>
           <li><a href="#projects">Projects</a></li>
           <li><a href="#news">News & Insights</a></li>
@@ -1157,6 +1286,7 @@
           <li><a href="#mining">Resource Extraction</a></li>
           <li><a href="#logistics">Bulk Logistics Haulage</a></li>
           <li><a href="#logistics">SADC Freight Routes</a></li>
+          <li><a href="#driving-school">Seed Faith Driving School</a></li>
           <li><a href="#why-us">Joint Partnerships</a></li>
         </ul>
       </div>

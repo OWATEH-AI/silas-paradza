@@ -618,4 +618,89 @@ ${message}`;
     });
   }
 
+
+  /* ==========================================================================
+     10. SEED FAITH DRIVING SCHOOL — FORM VALIDATION & WHATSAPP REDIRECT
+     ========================================================================== */
+  const drivingForm = document.getElementById("driving-school-form");
+  const dsFormSuccess = document.getElementById("ds-form-success");
+
+  if (drivingForm) {
+    drivingForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      let isValid = true;
+
+      // Reset error states
+      drivingForm.querySelectorAll(".form-error").forEach(el => el.textContent = "");
+      drivingForm.querySelectorAll(".form-input, .form-select, .form-textarea").forEach(el => el.classList.remove("error"));
+      if (dsFormSuccess) dsFormSuccess.hidden = true;
+
+      // Validate required fields
+      const requiredFields = drivingForm.querySelectorAll("[required]");
+      requiredFields.forEach(field => {
+        const value = field.value.trim ? field.value.trim() : field.value;
+        if (!value) {
+          field.classList.add("error");
+          isValid = false;
+          const errorId = field.id + "-error";
+          const errorSpan = document.getElementById(errorId);
+          if (errorSpan) {
+            const label = field.closest(".form-group")?.querySelector(".form-label");
+            const labelText = label ? label.textContent.replace("*", "").trim() : "This field";
+            errorSpan.textContent = `❌ ${labelText} is required.`;
+          }
+        }
+      });
+
+      if (!isValid) return;
+
+      // Collect field values
+      const name     = document.getElementById("ds-name").value.trim();
+      const phone    = document.getElementById("ds-phone").value.trim();
+      const dsClass  = document.getElementById("ds-class");
+      const dsPkg    = document.getElementById("ds-package");
+      const message  = document.getElementById("ds-message").value.trim() || "No additional message.";
+
+      const classLabel = dsClass.options[dsClass.selectedIndex]?.text || dsClass.value;
+      const pkgLabel   = dsPkg.options[dsPkg.selectedIndex]?.text   || dsPkg.value;
+
+      // Build WhatsApp message
+      const templateText =
+`*SEED FAITH DRIVING SCHOOL — LESSON APPLICATION*
+----------------------------
+*Name:* ${name}
+*Phone:* ${phone}
+*License Class:* ${classLabel}
+*Lesson Package:* ${pkgLabel}
+
+*Message / Notes:*
+${message}`;
+
+      const encoded      = encodeURIComponent(templateText);
+      const whatsappUrl  = `https://wa.me/27783396385?text=${encoded}`;
+
+      // Show success banner
+      if (dsFormSuccess) dsFormSuccess.hidden = false;
+
+      // Loading state on submit button
+      const dsSubmitBtn = document.getElementById("ds-submit-btn");
+      if (dsSubmitBtn) {
+        dsSubmitBtn.textContent = "Redirecting to WhatsApp...";
+        dsSubmitBtn.disabled    = true;
+      }
+
+      // Redirect after 1.5 seconds
+      setTimeout(() => {
+        window.open(whatsappUrl, "_blank");
+        drivingForm.reset();
+        if (dsSubmitBtn) {
+          dsSubmitBtn.textContent = "Apply for Lessons";
+          dsSubmitBtn.disabled    = false;
+        }
+        if (dsFormSuccess) dsFormSuccess.hidden = true;
+      }, 1500);
+    });
+  }
+
 });
