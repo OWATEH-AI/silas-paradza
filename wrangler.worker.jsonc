@@ -8,9 +8,6 @@
     "directory": "./dist/client",
     "binding": "ASSETS"
   },
-  "kv_namespaces": [
-    { "binding": "SESSION" }
-  ],
   "images": {
     "binding": "IMAGES"
   },

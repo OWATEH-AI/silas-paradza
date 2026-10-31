@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && wrangler deploy --config wrangler.worker.jsonc --dry-run --outdir .wrangler/pages-worker-bundle && node scripts/package-pages-worker.mjs",
-    "preview": "wrangler pages dev ./dist/client",
+    "build": "astro build && node node_modules/wrangler-pages/bin/wrangler.js deploy --config wrangler.worker.jsonc --dry-run --outdir .wrangler/pages-worker-bundle && node scripts/package-pages-worker.mjs",
+    "preview": "node node_modules/wrangler-pages/bin/wrangler.js pages dev ./dist/client",
     "studio:deploy": "sanity deploy",
     "schema:deploy": "sanity schema deploy",
     "check": "astro check"
@@ -33,6 +33,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/react-is": "^19.3.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "wrangler-pages": "npm:wrangler@3.114.17"
   }
 }
