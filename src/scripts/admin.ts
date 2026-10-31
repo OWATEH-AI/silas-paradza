@@ -14,10 +14,14 @@ type AdminFormField = {
 type AdminForm = {
   _id: string;
   _type: "formDefinition";
+  isDraft?: boolean;
   title: string;
   slug?: string;
   description?: string;
   submitLabel?: string;
+  displayMode?: "popup" | "inline";
+  ctaLabel?: string;
+  ctaVariant?: "primary" | "outline" | "text";
   displayOnType?: string;
   displayOnSlug?: string;
   active?: boolean;
@@ -297,11 +301,12 @@ function listing(type: ContentType): string {
 }
 
 function formTargetLabel(form: AdminForm): string {
-  if (!form.displayOnType || !form.displayOnSlug) return "Standalone form page";
+  if (!form.displayOnType || !form.displayOnSlug) return `Standalone page /forms/${form.slug || "…"}`;
   const target = state.documents.find(
     (doc) => doc._type === form.displayOnType && doc.slug?.current === form.displayOnSlug,
   );
-  return target ? `Popup on ${documentTitle(target)}` : `Popup on ${form.displayOnSlug}`;
+  const placement = form.displayMode === "inline" ? "Inline on" : "Popup on";
+  return target ? `${placement} ${documentTitle(target)}` : `${placement} ${form.displayOnSlug}`;
 }
 
 function formFieldRows(fields: AdminFormField[]): string {
@@ -328,18 +333,24 @@ function formEditorMarkup(form: AdminForm): string {
     })
     .join("");
   const options = [["inbox", "Website inbox"], ["whatsapp", "WhatsApp handoff"], ["email", "Email handoff"], ["googleForm", "Embedded Google Form"]];
-  const isDraft = form._id.startsWith("drafts.");
+  const displayModes = [["popup", "Button opens a popup"], ["inline", "Show form inline on the page"]];
+  const ctaVariants = [["primary", "Featured gold button"], ["outline", "Outlined button"], ["text", "Simple text link"]];
+  const isDraft = form.isDraft === true || form._id.startsWith("drafts.");
   const id = form._id.replace(/^drafts\./, "");
-  return `<dialog class="admin-form-builder-dialog" aria-labelledby="form-builder-title"><form id="admin-form-builder" class="admin-form-builder" novalidate><header class="admin-form-builder-header"><div><p class="admin-eyebrow">FORM BUILDER</p><h1 id="form-builder-title">${form._id ? `Edit ${escapeHtml(form.title || "form")}` : "Create a form"}</h1><p>Choose the fields, page and submission destination. Visitors see the website’s existing design.</p></div><button class="admin-dialog-close" type="button" data-form-action="close" aria-label="Close form builder">×</button></header><div class="admin-form-builder-body"><section class="admin-form-builder-section"><h2>Form details</h2><label class="admin-field"><span>Form name</span><input name="title" value="${escapeHtml(form.title)}" maxlength="100" required /></label><label class="admin-field"><span>Form page address</span><input name="slug" value="${escapeHtml(form.slug || "")}" placeholder="Generated from the form name" maxlength="80" /></label><label class="admin-field"><span>Introduction</span><textarea name="description" rows="3" maxlength="300">${escapeHtml(form.description || "")}</textarea></label><label class="admin-field"><span>Send button label</span><input name="submitLabel" value="${escapeHtml(form.submitLabel || "Send message")}" maxlength="40" /></label><label class="admin-field"><span>Show a popup on a content page (optional)</span><select name="displayOn"><option value="">No popup attachment — use the standalone form page</option>${targetOptions}</select></label><label class="admin-check"><input type="checkbox" name="active" ${form.active === false ? "" : "checked"} /><span>Accept submissions when published</span></label></section><section class="admin-form-builder-section"><div class="admin-form-builder-section-heading"><div><h2>Visitor fields</h2><p>Set each field to required or optional.</p></div><button class="admin-button admin-button--secondary" type="button" data-form-action="add-field">＋ Add field</button></div><div class="admin-builder-fields">${formFieldRows(state.builderFields)}</div></section><section class="admin-form-builder-section"><h2>After Send</h2><label class="admin-field"><span>Destination</span><select name="delivery">${options.map(([value, label]) => `<option value="${value}" ${(form.delivery || "inbox") === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="admin-field"><span>WhatsApp number or email address</span><input name="destination" value="${escapeHtml(form.destination || "")}" placeholder="Country code + number or recipient@example.com" /></label><label class="admin-field"><span>Google Forms embed URL</span><input name="googleFormUrl" type="url" value="${escapeHtml(form.googleFormUrl || "")}" placeholder="https://docs.google.com/forms/d/e/…/viewform?embedded=true" /></label><p class="admin-form-note">WhatsApp/email opens the visitor’s app with a prepared message after Sanity saves the response. It does not send automatically. Google Forms collect answers in Google, outside the Sanity inbox. Native form answers are private drafts; uploaded files are public Sanity CDN assets. Do not collect highly confidential documents.</p></section></div><footer class="admin-form-builder-actions"><button class="admin-button admin-button--quiet" type="button" data-form-action="close">Cancel</button>${form._id ? `<button class="admin-button admin-button--danger" type="button" data-form-action="delete" data-form-id="${escapeHtml(form._id)}">Delete form</button>` : ""}<button class="admin-button admin-button--secondary" type="submit" data-form-submit="save">Save draft</button><button class="admin-button admin-button--primary" type="submit" data-form-submit="publish">Publish form</button></footer><p class="admin-form-builder-message" role="status"></p><input type="hidden" name="id" value="${escapeHtml(id)}" /><input type="hidden" name="draft" value="${isDraft}" /></form></dialog>`;
+  return `<dialog class="admin-form-builder-dialog" aria-labelledby="form-builder-title"><form id="admin-form-builder" class="admin-form-builder" novalidate><header class="admin-form-builder-header"><div><p class="admin-eyebrow">FORM BUILDER</p><h1 id="form-builder-title">${form._id ? `Edit ${escapeHtml(form.title || "form")}` : "Create a form"}</h1><p>Choose where visitors find this form, how its button looks, and where submissions go.</p></div><button class="admin-dialog-close" type="button" data-form-action="close" aria-label="Close form builder">×</button></header><div class="admin-form-builder-body"><section class="admin-form-builder-section"><h2>Form details</h2><label class="admin-field"><span>Form name</span><input name="title" value="${escapeHtml(form.title)}" maxlength="100" required /></label><label class="admin-field"><span>Standalone form page address</span><input name="slug" value="${escapeHtml(form.slug || "")}" placeholder="Generated from the form name" maxlength="80" /><small>Every published form has its own page at /forms/your-address.</small></label><label class="admin-field"><span>Introduction</span><textarea name="description" rows="3" maxlength="300">${escapeHtml(form.description || "")}</textarea></label><label class="admin-field"><span>Send button label</span><input name="submitLabel" value="${escapeHtml(form.submitLabel || "Send message")}" maxlength="40" /></label><label class="admin-field"><span>Where should this form appear?</span><select name="displayOn"><option value="">Standalone form page only</option>${targetOptions}</select><small>Newly published pages appear in this list. Selecting one places this form on that page instead of adding it to the navigation.</small></label><label class="admin-field"><span>Page presentation</span><select name="displayMode">${displayModes.map(([value, label]) => `<option value="${value}" ${(form.displayMode || "popup") === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="admin-field"><span>Page call-to-action button text</span><input name="ctaLabel" value="${escapeHtml(form.ctaLabel || "Send an enquiry")}" maxlength="50" placeholder="Apply now, Request a quote…" /></label><label class="admin-field"><span>Page call-to-action style</span><select name="ctaVariant">${ctaVariants.map(([value, label]) => `<option value="${value}" ${(form.ctaVariant || "primary") === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="admin-check"><input type="checkbox" name="active" ${form.active === false ? "" : "checked"} /><span>Accept submissions when published</span></label></section><section class="admin-form-builder-section"><div class="admin-form-builder-section-heading"><div><h2>Visitor fields</h2><p>Set each field to required or optional.</p></div><button class="admin-button admin-button--secondary" type="button" data-form-action="add-field">＋ Add field</button></div><div class="admin-builder-fields">${formFieldRows(state.builderFields)}</div></section><section class="admin-form-builder-section"><h2>After Send</h2><label class="admin-field"><span>Submission destination</span><select name="delivery">${options.map(([value, label]) => `<option value="${value}" ${(form.delivery || "inbox") === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="admin-field"><span>WhatsApp number or email address</span><input name="destination" value="${escapeHtml(form.destination || "")}" placeholder="Country code + number or recipient@example.com" /></label><label class="admin-field"><span>Google Forms embed URL</span><input name="googleFormUrl" type="url" value="${escapeHtml(form.googleFormUrl || "")}" placeholder="https://docs.google.com/forms/d/e/…/viewform?embedded=true" /></label><p class="admin-form-note">Website inbox saves submissions to Sanity. WhatsApp/email saves first, then opens the visitor’s contact app with a prepared message. Google Forms submissions are collected by Google, not this inbox. Uploaded files are public Sanity CDN assets; do not request highly confidential documents.</p></section></div><footer class="admin-form-builder-actions"><button class="admin-button admin-button--quiet" type="button" data-form-action="close">Cancel</button>${form._id ? `<button class="admin-button admin-button--danger" type="button" data-form-action="delete" data-form-id="${escapeHtml(form._id)}">Delete form</button>` : ""}<button class="admin-button admin-button--secondary" type="submit" data-form-submit="save">Save draft</button><button class="admin-button admin-button--primary" type="submit" data-form-submit="publish">Publish form</button></footer><p class="admin-form-builder-message" role="status"></p><input type="hidden" name="id" value="${escapeHtml(id)}" /><input type="hidden" name="draft" value="${isDraft}" /></form></dialog>`;
 }
 
 function formsDashboard(): string {
   const showingInbox = state.formsTab === "inbox";
   const formsContent = state.forms.length
     ? `<div class="admin-list">${state.forms.map((form) => {
-        const draft = form._id.startsWith("drafts.");
+        const draft = form.isDraft === true || form._id.startsWith("drafts.");
+        const publishId = form._id.startsWith("drafts.") ? form._id : `drafts.${form._id}`;
         const href = form.slug ? `/forms/${encodeURIComponent(form.slug)}` : "";
-        return `<div class="admin-list-row"><span class="admin-list-icon">F</span><span class="admin-list-text"><strong>${escapeHtml(form.title || "Untitled form")}</strong><small>${escapeHtml(formTargetLabel(form))} · ${escapeHtml(href)}</small></span><span class="admin-status ${draft ? "admin-status--draft" : ""}">${draft ? "Draft" : form.active === false ? "Paused" : "Live"}</span><span class="admin-list-actions"><button type="button" class="admin-list-action" data-edit-form="${escapeHtml(form._id)}">Edit</button>${draft ? `<button type="button" class="admin-list-action" data-publish-form="${escapeHtml(form._id)}">Publish</button>` : ""}<button type="button" class="admin-list-action admin-list-action--delete" data-delete-form="${escapeHtml(form._id)}">Delete</button></span></div>`;
+        const formLink = href && !draft && form.active !== false
+          ? `<a class="admin-form-route" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">Preview form ↗</a>`
+          : escapeHtml(href);
+        return `<div class="admin-list-row"><span class="admin-list-icon">F</span><span class="admin-list-text"><strong>${escapeHtml(form.title || "Untitled form")}</strong><small>${escapeHtml(formTargetLabel(form))} · ${formLink}</small></span><span class="admin-status ${draft ? "admin-status--draft" : ""}">${draft ? "Draft" : form.active === false ? "Paused" : "Live"}</span><span class="admin-list-actions"><button type="button" class="admin-list-action" data-edit-form="${escapeHtml(form._id)}">Edit</button>${draft ? `<button type="button" class="admin-list-action" data-publish-form="${escapeHtml(publishId)}">Publish</button>` : ""}<button type="button" class="admin-list-action admin-list-action--delete" data-delete-form="${escapeHtml(form._id)}">Delete</button></span></div>`;
       }).join("")}</div>`
     : `<div class="admin-empty"><span class="admin-empty-mark">＋</span><h2>No forms yet</h2><p>Create a reusable form, choose its fields, and publish it as a page or popup on a news story, service, project, or website page.</p><button class="admin-button admin-button--primary" type="button" data-form-action="new">Create your first form</button></div>`;
   const submissionsContent = state.submissions.length
@@ -515,10 +526,25 @@ async function enterDashboard(): Promise<void> {
 
 function renderLogin(message = ""): void {
   if (!root) return;
-  root.innerHTML = `<section class="admin-login-wrap"><div class="admin-login-card"><div class="admin-login-brand-row"><a class="admin-brand admin-brand--login" href="/"><span class="admin-brand-mark">S</span><span><strong>SILAS</strong><small>WEBSITE DESK</small></span></a>${themeButton()}</div><p class="admin-eyebrow">PRIVATE EDITOR ACCESS</p><h1>Welcome back.</h1><p class="admin-login-copy">Sign in to update the website and preview changes before they go live.</p><form id="admin-login-form"><label class="admin-field" for="admin-password"><span>Website editor password</span><input id="admin-password" name="password" type="password" autocomplete="current-password" required autofocus /></label><p class="admin-login-error" role="alert">${escapeHtml(message)}</p><button class="admin-button admin-button--primary admin-full-button" type="submit">Open website desk <span>→</span></button></form><a class="admin-login-back" href="/">← Back to Silas Paradza’s website</a></div><p class="admin-login-foot">SILAS PARADZA · WEBSITE MANAGEMENT</p></section>`;
-  document.querySelector<HTMLFormElement>("#admin-login-form")?.addEventListener("submit", (event) => {
+  root.innerHTML = `<section class="admin-login-wrap"><div class="admin-login-card"><div class="admin-login-brand-row"><a class="admin-brand admin-brand--login" href="/"><span class="admin-brand-mark">S</span><span><strong>SILAS</strong><small>WEBSITE DESK</small></span></a>${themeButton()}</div><p class="admin-eyebrow">PRIVATE EDITOR ACCESS</p><h1>Welcome back.</h1><p class="admin-login-copy">Sign in to update the website and preview changes before they go live.</p><form id="admin-login-form"><label class="admin-field" for="admin-password"><span>Website editor password</span><span class="admin-password-control"><input id="admin-password" name="password" type="password" autocomplete="current-password" required autofocus /><button class="admin-password-toggle" id="admin-password-toggle" type="button" aria-label="Show password" aria-pressed="false" title="Show password"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></span></label><p class="admin-login-error" role="alert">${escapeHtml(message)}</p><button class="admin-button admin-button--primary admin-full-button" type="submit">Open website desk <span>→</span></button></form><a class="admin-login-back" href="/">← Back to Silas Paradza’s website</a></div><p class="admin-login-foot">SILAS PARADZA · WEBSITE MANAGEMENT</p></section>`;
+  const form = document.querySelector<HTMLFormElement>("#admin-login-form");
+  form?.addEventListener("submit", (event) => {
     event.preventDefault();
     void login(event.currentTarget as HTMLFormElement);
+  });
+  const passwordInput = form?.querySelector<HTMLInputElement>("#admin-password");
+  const passwordToggle = form?.querySelector<HTMLButtonElement>("#admin-password-toggle");
+  passwordToggle?.addEventListener("click", () => {
+    if (!passwordInput) return;
+    const showPassword = passwordInput.type === "password";
+    passwordInput.type = showPassword ? "text" : "password";
+    passwordToggle.setAttribute("aria-label", showPassword ? "Hide password" : "Show password");
+    passwordToggle.setAttribute("title", showPassword ? "Hide password" : "Show password");
+    passwordToggle.setAttribute("aria-pressed", String(showPassword));
+    passwordToggle.innerHTML = showPassword
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 5.2A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a15.7 15.7 0 0 1-3.1 3.8"/><path d="M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7a10.7 10.7 0 0 0 4-.8"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>`;
+    passwordInput.focus();
   });
 }
 
@@ -829,6 +855,9 @@ async function submitFormBuilder(form: HTMLFormElement, action: "save" | "publis
     description: String(data.get("description") ?? ""),
     submitLabel: String(data.get("submitLabel") ?? ""),
     displayOn: target ? `${displayOnType}|${displayOnSlug}` : "",
+    displayMode: String(data.get("displayMode") ?? "popup"),
+    ctaLabel: String(data.get("ctaLabel") ?? ""),
+    ctaVariant: String(data.get("ctaVariant") ?? "primary"),
     active: data.get("active") === "on",
     fields,
     delivery: String(data.get("delivery") ?? "inbox"),

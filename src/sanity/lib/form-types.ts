@@ -15,6 +15,11 @@ export interface FormDefinition {
   slug: string;
   description?: string;
   submitLabel?: string;
+  displayMode?: "popup" | "inline";
+  ctaLabel?: string;
+  ctaVariant?: "primary" | "outline" | "text";
+  displayOnType?: string;
+  displayOnSlug?: string;
   delivery?: "inbox" | "whatsapp" | "email" | "googleForm";
   destination?: string;
   googleFormUrl?: string;

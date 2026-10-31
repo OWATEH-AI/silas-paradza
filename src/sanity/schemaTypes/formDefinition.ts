@@ -15,12 +15,36 @@ export const formDefinition = defineType({
     defineField({ name: "description", title: "Introduction", type: "text", rows: 3, group: "setup", validation: (rule) => rule.max(300) }),
     defineField({ name: "submitLabel", title: "Send button label", type: "string", initialValue: "Send message", group: "setup", validation: (rule) => rule.max(40) }),
     defineField({
+      name: "displayMode",
+      title: "How the form appears on its page",
+      type: "string",
+      group: "setup",
+      initialValue: "popup",
+      options: { list: [
+        { title: "Popup opened by a button", value: "popup" },
+        { title: "Show the form inline", value: "inline" },
+      ] },
+    }),
+    defineField({ name: "ctaLabel", title: "Page button label", type: "string", initialValue: "Send an enquiry", group: "setup", validation: (rule) => rule.max(50) }),
+    defineField({
+      name: "ctaVariant",
+      title: "Page button style",
+      type: "string",
+      group: "setup",
+      initialValue: "primary",
+      options: { list: [
+        { title: "Featured gold button", value: "primary" },
+        { title: "Outlined button", value: "outline" },
+        { title: "Simple text link", value: "text" },
+      ] },
+    }),
+    defineField({
       name: "displayOnType",
-      title: "Show popup on",
+      title: "Attach to a content page",
       type: "string",
       group: "setup",
       options: { list: [
-        { title: "Do not attach to a content page", value: "" },
+        { title: "Standalone form page", value: "" },
         { title: "News story", value: "article" },
         { title: "Service", value: "service" },
         { title: "Project", value: "project" },

@@ -104,6 +104,10 @@ function prepareForm(fields: Record<string, unknown>, id: string, existing?: Rec
   if (displayOn && (!contentTypes.includes(displayOnType as (typeof contentTypes)[number]) || !/^[a-z0-9-]{1,90}$/.test(displayOnSlug))) {
     return { error: "Choose a valid website page to show this form on." } as const;
   }
+  const displayMode = fields.displayMode === "inline" ? "inline" : "popup";
+  const ctaVariant = ["primary", "outline", "text"].includes(String(fields.ctaVariant))
+    ? String(fields.ctaVariant)
+    : "primary";
 
   const {
     _rev: _revision,
@@ -120,6 +124,11 @@ function prepareForm(fields: Record<string, unknown>, id: string, existing?: Rec
       slug: { _type: "slug", current: slug },
       description: typeof fields.description === "string" ? fields.description.trim().slice(0, 300) : "",
       submitLabel: typeof fields.submitLabel === "string" ? fields.submitLabel.trim().slice(0, 40) : "Send message",
+      displayMode,
+      ctaLabel: typeof fields.ctaLabel === "string" && fields.ctaLabel.trim()
+        ? fields.ctaLabel.trim().slice(0, 50)
+        : "Send an enquiry",
+      ctaVariant,
       displayOnType,
       displayOnSlug,
       active: fields.active !== false,
@@ -136,8 +145,8 @@ export const GET: APIRoute = async ({ request }) => {
   const client = createAdminSanityClient();
   if (!client) return Response.json({ error: "Sanity write access is not configured." }, { status: 503 });
   try {
-    const [forms, submissions] = await Promise.all([
-      client.fetch(
+    const [forms, submissions, draftIds] = await Promise.all([
+      client.fetch<Array<{ _id: string } & Record<string, unknown>>>(
         `*[_type == "formDefinition"] | order(_updatedAt desc)[0...200] {
           ..., "slug": slug.current
         }`,
@@ -151,8 +160,20 @@ export const GET: APIRoute = async ({ request }) => {
         {},
         { perspective: "drafts", useCdn: false },
       ),
+      client.fetch<string[]>(
+        '*[_id in path("drafts.**") && _type == "formDefinition"]._id',
+        {},
+        { perspective: "raw", useCdn: false },
+      ),
     ]);
-    return Response.json({ forms, submissions }, { headers: { "Cache-Control": "no-store" } });
+    const draftIdsWithoutPrefix = new Set(draftIds.map((id) => id.slice("drafts.".length)));
+    return Response.json(
+      {
+        forms: forms.map((form) => ({ ...form, isDraft: draftIdsWithoutPrefix.has(form._id) })),
+        submissions,
+      },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   } catch (error) {
     return errorResponse(error);
   }
@@ -244,6 +265,26 @@ export const POST: APIRoute = async ({ request }) => {
     );
     if (conflictingForm) {
       return Response.json({ error: "Another form already uses that page address. Choose a different one." }, { status: 409 });
+    }
+    const displayOnType = prepared.document.displayOnType as string | undefined;
+    const displayOnSlug = prepared.document.displayOnSlug as string | undefined;
+    if (displayOnType && displayOnSlug) {
+      const targetExists = await client.fetch<string | undefined>(
+        `*[_type == $type && slug.current == $slug][0]._id`,
+        { type: displayOnType, slug: displayOnSlug },
+        { perspective: "drafts", useCdn: false },
+      );
+      if (!targetExists) {
+        return Response.json({ error: "That page could not be found. Refresh the form builder and choose an existing page." }, { status: 404 });
+      }
+      const conflictingAttachment = await client.fetch<string | undefined>(
+        `*[_type == "formDefinition" && displayOnType == $type && displayOnSlug == $slug && _id != $id && _id != $draftId][0]._id`,
+        { type: displayOnType, slug: displayOnSlug, id, draftId },
+        { perspective: "drafts", useCdn: false },
+      );
+      if (conflictingAttachment) {
+        return Response.json({ error: "Another form is already attached to this page. Edit that form or choose a different page." }, { status: 409 });
+      }
     }
     await client.createOrReplace(prepared.document as Parameters<typeof client.createOrReplace>[0]);
 

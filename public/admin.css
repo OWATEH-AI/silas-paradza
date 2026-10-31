@@ -106,6 +106,8 @@ html[data-theme="dark"] .admin-theme-icon--moon { display: block; }
 .admin-list-text strong, .admin-list-text small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .admin-list-text strong { font-size: 12px; font-weight: 600; }
 .admin-list-text small { margin-top: 5px; color: #929ba1; font-size: 10px; }
+.admin-form-route { color: #9c7846; text-decoration: underline; text-underline-offset: 2px; }
+.admin-form-route:hover { color: var(--text); }
 .admin-status { flex: 0 0 auto; padding: 5px 9px; border-radius: 20px; color: #326c52; background: #eaf5ef; font-size: 10px; font-weight: 600; }
 .admin-status--draft { color: #946d29; background: #f8f1e3; }
 .admin-list-arrow { color: #a5adb2; font-size: 16px; }
@@ -175,6 +177,12 @@ html[data-theme="dark"] .admin-theme-icon--moon { display: block; }
 .admin-field { display: grid; align-content: start; gap: 8px; }
 .admin-field > span, .admin-upload > span:first-child { color: #505c63; font-size: 11px; font-weight: 600; }
 .admin-field input, .admin-field textarea, .admin-field select { width: 100%; min-height: 42px; padding: 10px 11px; border: 1px solid var(--border); border-radius: 5px; outline: 0; color: var(--text); background: var(--input); font-size: 12px; }
+.admin-password-control { position: relative; display: block; }
+.admin-login-card .admin-password-control input { width: 100%; padding-right: 52px; }
+.admin-password-toggle { position: absolute; top: 1px; right: 1px; display: grid; width: 44px; height: calc(100% - 2px); min-width: 44px; min-height: 44px; place-items: center; padding: 0; border: 0; border-radius: 4px; color: var(--text-soft); background: transparent; cursor: pointer; touch-action: manipulation; }
+.admin-password-toggle:hover { color: var(--text); background: var(--surface-soft); }
+.admin-password-toggle:focus-visible { outline: 2px solid #b59158; outline-offset: -3px; }
+.admin-password-toggle svg { width: 19px; height: 19px; }
 .admin-field textarea { min-height: 110px; resize: vertical; line-height: 1.6; }
 .admin-field input:focus, .admin-field textarea:focus, .admin-field select:focus, .admin-login-card input:focus { border-color: #b59158; box-shadow: 0 0 0 3px rgba(181,145,88,.12); }
 .admin-field small, .admin-upload small { color: #8b969c; font-size: 10px; line-height: 1.5; }

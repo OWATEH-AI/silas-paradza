@@ -9,9 +9,14 @@ interface Props {
 
 const { form, display = "popup" } = Astro.props;
 const modalId = `public-form-${form.slug}`;
+const displayMode = display === "inline" || form.displayMode === "inline" ? "inline" : "popup";
+const ctaVariant =
+  form.ctaVariant === "outline" || form.ctaVariant === "text"
+    ? form.ctaVariant
+    : "primary";
 ---
 
-{display === "inline" ? (
+{displayMode === "inline" ? (
   <section class="public-form-inline">
     <p class="eyebrow">GET IN TOUCH</p>
     <h2>{form.title}</h2>
@@ -20,7 +25,7 @@ const modalId = `public-form-${form.slug}`;
   </section>
 ) : (
   <>
-    <button class="public-form-trigger" type="button" aria-haspopup="dialog" aria-controls={modalId}>{form.title}</button>
+    <button class={`public-form-trigger public-form-trigger--${ctaVariant}`} type="button" aria-haspopup="dialog" aria-controls={modalId}>{form.ctaLabel || form.title}</button>
     <dialog class="public-form-dialog" id={modalId} aria-labelledby={`${modalId}-title`}>
       <div class="public-form-dialog-panel">
         <header class="public-form-dialog-header">
