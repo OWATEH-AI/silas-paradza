@@ -16,6 +16,7 @@ export interface FormDefinition {
   description?: string;
   submitLabel?: string;
   displayMode?: "popup" | "inline";
+  ctaPlacement?: "beforeContent" | "afterContent";
   ctaLabel?: string;
   ctaVariant?: "primary" | "outline" | "text";
   displayOnType?: string;

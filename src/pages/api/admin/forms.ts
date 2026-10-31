@@ -105,6 +105,7 @@ function prepareForm(fields: Record<string, unknown>, id: string, existing?: Rec
     return { error: "Choose a valid website page to show this form on." } as const;
   }
   const displayMode = fields.displayMode === "inline" ? "inline" : "popup";
+  const ctaPlacement = fields.ctaPlacement === "beforeContent" ? "beforeContent" : "afterContent";
   const ctaVariant = ["primary", "outline", "text"].includes(String(fields.ctaVariant))
     ? String(fields.ctaVariant)
     : "primary";
@@ -125,6 +126,7 @@ function prepareForm(fields: Record<string, unknown>, id: string, existing?: Rec
       description: typeof fields.description === "string" ? fields.description.trim().slice(0, 300) : "",
       submitLabel: typeof fields.submitLabel === "string" ? fields.submitLabel.trim().slice(0, 40) : "Send message",
       displayMode,
+      ctaPlacement,
       ctaLabel: typeof fields.ctaLabel === "string" && fields.ctaLabel.trim()
         ? fields.ctaLabel.trim().slice(0, 50)
         : "Send an enquiry",
@@ -272,7 +274,7 @@ export const POST: APIRoute = async ({ request }) => {
       const targetExists = await client.fetch<string | undefined>(
         `*[_type == $type && slug.current == $slug][0]._id`,
         { type: displayOnType, slug: displayOnSlug },
-        { perspective: "drafts", useCdn: false },
+        { perspective: "published", useCdn: false },
       );
       if (!targetExists) {
         return Response.json({ error: "That page could not be found. Refresh the form builder and choose an existing page." }, { status: 404 });

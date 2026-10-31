@@ -14,7 +14,7 @@ const { data: form } = await loadQuery<FormDefinition | null>({
   token: env.SANITY_API_READ_TOKEN,
 });
 
-if (!form) return new Response(null, { status: 404 });
+if (!form || form.displayOnType) return new Response(null, { status: 404 });
 ---
 
 <EditorialPage title={form.title} description={form.description}>

@@ -69,7 +69,8 @@ const cover = imageUrl(story.coverImage, 1400) ?? story.coverImage?.asset?.url;
         title={story.title}
       />
     ) : cover && <img class="editorial-feature-media" src={cover} alt={story.coverImage?.alt ?? title} />}
+    {attachedForm?.ctaPlacement === "beforeContent" && <PublicForm form={attachedForm} />}
     <PortableText value={story.body} />
-    {attachedForm && <PublicForm form={attachedForm} />}
+    {attachedForm && attachedForm.ctaPlacement !== "beforeContent" && <PublicForm form={attachedForm} />}
   </article>
 </EditorialPage>

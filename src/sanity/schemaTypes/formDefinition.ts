@@ -25,6 +25,17 @@ export const formDefinition = defineType({
         { title: "Show the form inline", value: "inline" },
       ] },
     }),
+    defineField({
+      name: "ctaPlacement",
+      title: "Where should it appear in the page?",
+      type: "string",
+      group: "setup",
+      initialValue: "afterContent",
+      options: { list: [
+        { title: "After the page introduction", value: "beforeContent" },
+        { title: "After the page content", value: "afterContent" },
+      ] },
+    }),
     defineField({ name: "ctaLabel", title: "Page button label", type: "string", initialValue: "Send an enquiry", group: "setup", validation: (rule) => rule.max(50) }),
     defineField({
       name: "ctaVariant",
