@@ -1,0 +1,21 @@
+{
+  "name": "silas-paradza",
+  "main": "./dist/server/entry.mjs",
+  "compatibility_date": "2026-10-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS"
+  },
+  "kv_namespaces": [
+    { "binding": "SESSION" }
+  ],
+  "images": {
+    "binding": "IMAGES"
+  },
+  "vars": {
+    "PUBLIC_SANITY_PROJECT_ID": "z2cpms2c",
+    "PUBLIC_SANITY_DATASET": "production"
+  }
+}

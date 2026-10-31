@@ -1,7 +1,9 @@
 #:schema node_modules/wrangler/config-schema.json
 name = "silas-paradza"
-compatibility_date = "2026-06-11"
+compatibility_date = "2026-10-25"
+pages_build_output_dir = "./dist/client"
+compatibility_flags = ["nodejs_compat"]
 
-[pages_build_config]
-build_command = ""
-destination_dir = "."
+[vars]
+PUBLIC_SANITY_PROJECT_ID = "z2cpms2c"
+PUBLIC_SANITY_DATASET = "production"

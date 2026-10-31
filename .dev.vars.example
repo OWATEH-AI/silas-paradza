@@ -1,0 +1,4 @@
+SANITY_API_READ_TOKEN=replace-with-a-read-only-token-for-preview
+SANITY_API_WRITE_TOKEN=replace-with-a-write-token-for-admin-content
+ADMIN_PASSWORD=replace-with-a-strong-admin-password
+ADMIN_SESSION_SECRET=replace-with-at-least-32-random-characters

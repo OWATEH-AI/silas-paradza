@@ -1,0 +1,67 @@
+---
+import EditorialPage from "../../components/EditorialPage.astro";
+import PortableText from "../../components/PortableText.astro";
+import VideoEmbed from "../../components/VideoEmbed.astro";
+import PublicForm from "../../components/PublicForm.astro";
+import type { FormDefinition } from "../../sanity/lib/form-types";
+import { FORM_FOR_CONTENT_QUERY, PAGE_QUERY } from "../../sanity/lib/queries";
+import { getDraftModeProps, loadQuery } from "../../sanity/lib/load-query";
+import { imageUrl } from "../../sanity/lib/image-url";
+import { stegaClean } from "@sanity/client/stega";
+import type { TypedObject } from "@portabletext/types";
+import { env } from "cloudflare:workers";
+
+export const prerender = false;
+
+interface WebsitePage {
+  title: string;
+  slug: string;
+  summary?: string;
+  body?: TypedObject[];
+  coverImage?: { asset?: { url?: string }; alt?: string };
+  videoFile?: { asset?: { url?: string; mimeType?: string } };
+  videoUrl?: string;
+  videoPoster?: { asset?: { url?: string }; alt?: string };
+  seo?: { metaTitle?: string; metaDescription?: string };
+}
+
+const { data: page } = await loadQuery<WebsitePage | null>({
+  query: PAGE_QUERY,
+  params: { slug: Astro.params.slug ?? "" },
+  ...getDraftModeProps(Astro.cookies),
+  token: env.SANITY_API_READ_TOKEN,
+});
+
+if (!page) return new Response(null, { status: 404 });
+const { data: attachedForm } = await loadQuery<FormDefinition | null>({
+  query: FORM_FOR_CONTENT_QUERY,
+  params: { contentType: "page", slug: page.slug },
+  ...getDraftModeProps(Astro.cookies),
+  token: env.SANITY_API_READ_TOKEN,
+});
+
+const title = stegaClean(page.seo?.metaTitle || page.title);
+const description = stegaClean(page.seo?.metaDescription || page.summary || "");
+const cover = imageUrl(page.coverImage, 1400) ?? page.coverImage?.asset?.url;
+---
+
+<EditorialPage title={title} description={description} image={cover}>
+  <article class="editorial-article">
+    <a class="editorial-back-link" href="/">&larr; Homepage</a>
+    <header class="editorial-article__header">
+      <h1 class="section-title">{page.title}</h1>
+      {page.summary && <p class="section-subtitle">{page.summary}</p>}
+    </header>
+    {(page.videoFile?.asset?.url || page.videoUrl) ? (
+      <VideoEmbed
+        fileUrl={page.videoFile?.asset?.url}
+        fileType={page.videoFile?.asset?.mimeType}
+        externalUrl={page.videoUrl}
+        poster={page.videoPoster?.asset?.url}
+        title={page.title}
+      />
+    ) : cover && <img class="editorial-feature-media" src={cover} alt={page.coverImage?.alt ?? title} />}
+    <PortableText value={page.body} />
+    {attachedForm && <PublicForm form={attachedForm} />}
+  </article>
+</EditorialPage>

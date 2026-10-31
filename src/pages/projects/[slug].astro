@@ -1,0 +1,72 @@
+---
+import EditorialPage from "../../components/EditorialPage.astro";
+import PortableText from "../../components/PortableText.astro";
+import VideoEmbed from "../../components/VideoEmbed.astro";
+import PublicForm from "../../components/PublicForm.astro";
+import type { FormDefinition } from "../../sanity/lib/form-types";
+import { FORM_FOR_CONTENT_QUERY, PROJECT_QUERY } from "../../sanity/lib/queries";
+import { getDraftModeProps, loadQuery } from "../../sanity/lib/load-query";
+import { imageUrl } from "../../sanity/lib/image-url";
+import { stegaClean } from "@sanity/client/stega";
+import type { TypedObject } from "@portabletext/types";
+import { env } from "cloudflare:workers";
+
+export const prerender = false;
+
+interface ProjectPage {
+  title: string;
+  slug: string;
+  status?: string;
+  location?: string;
+  summary?: string;
+  body?: TypedObject[];
+  coverImage?: { asset?: { url?: string }; alt?: string };
+  videoFile?: { asset?: { url?: string; mimeType?: string } };
+  videoUrl?: string;
+  videoPoster?: { asset?: { url?: string }; alt?: string };
+  highlights?: Array<{ value?: string; label?: string }>;
+  seo?: { metaTitle?: string; metaDescription?: string };
+}
+
+const { data: project } = await loadQuery<ProjectPage | null>({
+  query: PROJECT_QUERY,
+  params: { slug: Astro.params.slug ?? "" },
+  ...getDraftModeProps(Astro.cookies),
+  token: env.SANITY_API_READ_TOKEN,
+});
+
+if (!project) return new Response(null, { status: 404 });
+const { data: attachedForm } = await loadQuery<FormDefinition | null>({
+  query: FORM_FOR_CONTENT_QUERY,
+  params: { contentType: "project", slug: project.slug },
+  ...getDraftModeProps(Astro.cookies),
+  token: env.SANITY_API_READ_TOKEN,
+});
+
+const title = stegaClean(project.seo?.metaTitle || project.title);
+const description = stegaClean(project.seo?.metaDescription || project.summary || "");
+const cover = imageUrl(project.coverImage, 1400) ?? project.coverImage?.asset?.url;
+---
+
+<EditorialPage title={title} description={description} image={cover}>
+  <article class="editorial-article">
+    <a class="editorial-back-link" href="/#projects">&larr; Back to projects</a>
+    <header class="editorial-article__header">
+      {project.status && <span class="eyebrow">{project.status}</span>}
+      <h1 class="section-title">{project.title}</h1>
+      {project.summary && <p class="section-subtitle">{project.summary}</p>}
+      {project.location && <p class="editorial-meta">Location: {project.location}</p>}
+    </header>
+    {(project.videoFile?.asset?.url || project.videoUrl) ? (
+      <VideoEmbed
+        fileUrl={project.videoFile?.asset?.url}
+        fileType={project.videoFile?.asset?.mimeType}
+        externalUrl={project.videoUrl}
+        poster={project.videoPoster?.asset?.url}
+        title={project.title}
+      />
+    ) : cover && <img class="editorial-feature-media" src={cover} alt={project.coverImage?.alt ?? title} />}
+    <PortableText value={project.body} />
+    {attachedForm && <PublicForm form={attachedForm} />}
+  </article>
+</EditorialPage>

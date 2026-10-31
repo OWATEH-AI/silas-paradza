@@ -1,0 +1,240 @@
+---
+import { imageUrl } from "../sanity/lib/image-url";
+import { safeVideoUrl } from "../sanity/lib/safe-video-url";
+
+interface ImageField {
+  asset?: { _id?: string; url?: string };
+  alt?: string;
+}
+
+interface ServiceCard {
+  _id: string;
+  title: string;
+  slug: string;
+  category?: string;
+  summary?: string;
+  coverImage?: ImageField;
+}
+
+interface ProjectCard {
+  _id: string;
+  title: string;
+  slug: string;
+  status?: string;
+  location?: string;
+  summary?: string;
+  coverImage?: ImageField;
+  highlights?: Array<{ value?: string; label?: string }>;
+}
+
+interface ArticleCard {
+  _id: string;
+  title: string;
+  slug: string;
+  excerpt?: string;
+  category?: string;
+  publishedAt?: string;
+  coverImage?: ImageField;
+}
+
+interface GalleryCard {
+  _id: string;
+  title: string;
+  category?: string;
+  image?: ImageField;
+  videoFile?: { asset?: { url?: string; mimeType?: string } };
+  videoUrl?: string;
+  videoPoster?: ImageField;
+}
+
+type Props =
+  | { kind: "services"; items: ServiceCard[] }
+  | { kind: "projects"; items: ProjectCard[] }
+  | { kind: "articles"; items: ArticleCard[] }
+  | { kind: "gallery"; items: GalleryCard[] };
+
+const { kind, items } = Astro.props as Props;
+const galleryCategories = kind === "gallery"
+  ? [...new Set(items.map((item) => item.category).filter((category): category is string => Boolean(category)))]
+  : [];
+const formatDate = (value?: string) =>
+  value
+    ? new Intl.DateTimeFormat("en", { dateStyle: "long" }).format(new Date(value))
+    : "";
+const videoSource = (item: GalleryCard) => item.videoFile?.asset?.url ?? safeVideoUrl(item.videoUrl);
+const isSanityFile = (value?: string) => {
+  if (!value) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && url.hostname === "cdn.sanity.io" && url.pathname.startsWith("/files/");
+  } catch {
+    return false;
+  }
+};
+const imageSource = (image?: ImageField) => imageUrl(image, 900) ?? image?.asset?.url;
+---
+
+{kind === "services" && (
+  <section class="section section--muted" id="services">
+    <div class="container">
+      <div class="text-center section-header">
+        <span class="eyebrow reveal">What we do</span>
+        <h2 class="section-title reveal">Services</h2>
+        <p class="section-subtitle reveal reveal-delay-1">Explore our current services and capabilities.</p>
+      </div>
+      {items.length > 0 ? (
+        <div class="grid-3 reveal">
+          {items.map((service) => (
+            <article class="project-case-card" data-sanity={service._id}>
+              {service.coverImage && imageSource(service.coverImage) && (
+                <div class="project-case-img-wrapper">
+                  <img class="project-case-img" src={imageSource(service.coverImage)} alt={service.coverImage.alt ?? service.title} loading="lazy" />
+                </div>
+              )}
+              <div class="project-case-body">
+                {service.category && <span class="project-case-tag">{service.category}</span>}
+                <h3>{service.title}</h3>
+                {service.summary && <p>{service.summary}</p>}
+                <a class="news-card__more-btn" href={`/services/${service.slug}`}>Learn about this service &rarr;</a>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p class="content-empty-state">Service information will appear here.</p>
+      )}
+    </div>
+  </section>
+)}
+
+{kind === "projects" && (
+  <section class="section projects-section" id="projects">
+    <div class="container">
+      <div class="text-center section-header">
+        <span class="eyebrow reveal">Track record</span>
+        <h2 class="section-title reveal">Projects &amp; operations</h2>
+        <p class="section-subtitle reveal reveal-delay-1">A selection of work and operations managed by Silas Paradza.</p>
+      </div>
+      {items.length > 0 ? (
+        <div class="grid-2 projects-grid reveal">
+          {items.map((project) => (
+            <article class="project-case-card" data-sanity={project._id}>
+              {project.coverImage && imageSource(project.coverImage) && (
+                <div class="project-case-img-wrapper">
+                  <img class="project-case-img" src={imageSource(project.coverImage)} alt={project.coverImage.alt ?? project.title} loading="lazy" />
+                </div>
+              )}
+              <div class="project-case-body">
+                {project.status && <span class="project-case-tag">{project.status}</span>}
+                <h3>{project.title}</h3>
+                {project.summary && <p>{project.summary}</p>}
+                <div class="project-case-stats">
+                  {project.location && <div><span class="project-case-stat-num">{project.location}</span><span class="project-case-stat-lbl">Location</span></div>}
+                  {project.highlights?.slice(0, 2).map((highlight) => (
+                    <div><span class="project-case-stat-num">{highlight.value}</span><span class="project-case-stat-lbl">{highlight.label}</span></div>
+                  ))}
+                </div>
+                <a class="news-card__more-btn" href={`/projects/${project.slug}`}>View project &rarr;</a>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p class="content-empty-state">Project updates will appear here.</p>
+      )}
+    </div>
+  </section>
+)}
+
+{kind === "articles" && (
+  <section class="section news-section" id="news">
+    <div class="container">
+      <div class="text-center section-header">
+        <span class="eyebrow reveal">From the business</span>
+        <h2 class="section-title reveal">News &amp; insights</h2>
+        <p class="section-subtitle reveal reveal-delay-1">Company news, perspectives, and updates from our work.</p>
+      </div>
+      {items.length > 0 ? (
+        <div class="grid-3 news-grid reveal">
+          {items.map((article) => (
+            <article class="news-card" data-sanity={article._id}>
+              {article.coverImage && imageSource(article.coverImage) && (
+                <div class="news-card__img-wrapper">
+                  <img class="news-card__img" src={imageSource(article.coverImage)} alt={article.coverImage.alt ?? article.title} loading="lazy" />
+                </div>
+              )}
+              <div class="news-card__body">
+                <span class="news-card__meta">{[formatDate(article.publishedAt), article.category].filter(Boolean).join(" · ")}</span>
+                <h3 class="news-card__title"><a href={`/news/${article.slug}`}>{article.title}</a></h3>
+                {article.excerpt && <p class="news-card__excerpt">{article.excerpt}</p>}
+                <a href={`/news/${article.slug}`} class="news-card__more-btn">Read story &rarr;</a>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p class="content-empty-state">News and updates will appear here.</p>
+      )}
+    </div>
+  </section>
+)}
+
+{kind === "gallery" && (
+  <section class="section gallery-section section--muted" id="gallery">
+    <div class="container">
+      <div class="text-center section-header">
+        <span class="eyebrow reveal">Visual showcase</span>
+        <h2 class="section-title reveal">Operations gallery</h2>
+        <p class="section-subtitle reveal reveal-delay-1">Photos and videos from across our operations.</p>
+      </div>
+      <div class="gallery-filters reveal" aria-label="Filter gallery by category">
+        <button class="filter-btn active" type="button" data-filter="all">All photos</button>
+        {galleryCategories.map((category) => (
+          <button class="filter-btn" type="button" data-filter={category.toLowerCase()}>{category}</button>
+        ))}
+      </div>
+      {items.length > 0 ? (
+        <div class="gallery-masonry reveal reveal-delay-1">
+          {items.map((item) => {
+            const video = videoSource(item);
+            const image = item.image ?? item.videoPoster;
+            const poster = imageSource(image);
+            const isSanityVideo = isSanityFile(video);
+            return (
+              <figure
+                class:list={["gallery-item", isSanityVideo && "gallery-item--video-player"]}
+                data-category={(item.category ?? "operations").toLowerCase()}
+                data-sanity={item._id}
+                tabindex={video ? undefined : "0"}
+                role={video ? undefined : "button"}
+                aria-label={video ? undefined : `View ${item.title}`}
+              >
+                {video && isSanityVideo ? (
+                  <video class="gallery-item-video" controls loading="lazy" width="800" height="450" playsinline preload="none" poster={poster} aria-label={`Play ${item.title}`}>
+                    <source src={video} type={item.videoFile?.asset?.mimeType} />
+                    Your browser does not support embedded video playback.
+                  </video>
+                ) : video ? (
+                  <a href={video} target="_blank" rel="noopener noreferrer" aria-label={`Open video: ${item.title}`}>
+                    {image && poster
+                      ? <img class="gallery-item-img" src={poster} alt={image.alt ?? item.title} loading="lazy" />
+                      : <div class="gallery-video-placeholder" aria-hidden="true">Video</div>}
+                    <span class="gallery-video-badge">Video</span>
+                  </a>
+                ) : image && poster ? (
+                  <img class="gallery-item-img" src={poster} alt={image.alt ?? item.title} loading="lazy" />
+                ) : null}
+                <figcaption class="gallery-item-overlay">
+                  <span>{item.category ?? "Operations"}</span>
+                  <h3>{item.title}</h3>
+                </figcaption>
+              </figure>
+            );
+          })}
+        </div>
+      ) : (
+        <p class="content-empty-state">New photos and videos will appear here.</p>
+      )}
+    </div>
+  </section>
+)}

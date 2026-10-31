@@ -1,0 +1,22 @@
+---
+import EditorialPage from "../../components/EditorialPage.astro";
+import PublicForm from "../../components/PublicForm.astro";
+import type { FormDefinition } from "../../sanity/lib/form-types";
+import { PUBLIC_FORM_QUERY } from "../../sanity/lib/queries";
+import { loadQuery } from "../../sanity/lib/load-query";
+import { env } from "cloudflare:workers";
+
+export const prerender = false;
+
+const { data: form } = await loadQuery<FormDefinition | null>({
+  query: PUBLIC_FORM_QUERY,
+  params: { slug: Astro.params.slug ?? "" },
+  token: env.SANITY_API_READ_TOKEN,
+});
+
+if (!form) return new Response(null, { status: 404 });
+---
+
+<EditorialPage title={form.title} description={form.description}>
+  <PublicForm form={form} display="inline" />
+</EditorialPage>

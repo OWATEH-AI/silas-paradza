@@ -1,0 +1,68 @@
+---
+import type { FormDefinition } from "../sanity/lib/form-types";
+
+interface Props {
+  form: FormDefinition;
+  idPrefix: string;
+  sourcePath: string;
+}
+
+const { form, idPrefix, sourcePath } = Astro.props;
+---
+
+{form.delivery === "googleForm" ? (
+  form.googleFormUrl?.startsWith("https://docs.google.com/forms/") ? (
+    <iframe
+      class="public-form-google"
+      src={`${form.googleFormUrl}${form.googleFormUrl.includes("?") ? "&" : "?"}embedded=true`}
+      title={`${form.title} Google Form`}
+      loading="lazy"
+      referrerpolicy="strict-origin-when-cross-origin"
+    />
+  ) : <p class="public-form-status" role="alert">This Google Form is not configured yet.</p>
+) : (
+  <form class="public-form" action={`/api/forms/${encodeURIComponent(form.slug)}`} method="post" enctype="multipart/form-data">
+    <input type="hidden" name="sourcePath" value={sourcePath} />
+    <div class="public-form-honey" aria-hidden="true">
+      <label for={`${idPrefix}-company`}>Leave this field empty</label>
+      <input id={`${idPrefix}-company`} name="companyWebsite" tabindex="-1" autocomplete="off" />
+    </div>
+    {form.fields.map((field) => {
+      const name = `field_${field.name}`;
+      const id = `${idPrefix}-${field.name}`;
+      return (
+        <label class={`public-form-field${field.type === "checkbox" ? " public-form-field--checkbox" : ""}`} for={id}>
+          <span>{field.label}{field.required && <span aria-hidden="true"> *</span>}</span>
+          {field.type === "textarea" ? (
+            <textarea id={id} name={name} placeholder={field.placeholder} required={Boolean(field.required)} maxlength="4000" rows="4"></textarea>
+          ) : field.type === "select" ? (
+            <select id={id} name={name} required={Boolean(field.required)}>
+              <option value="">Choose an option</option>
+              {field.options?.map((option) => <option value={option}>{option}</option>)}
+            </select>
+          ) : field.type === "checkbox" ? (
+            <input id={id} name={name} type="checkbox" value="yes" required={Boolean(field.required)} />
+          ) : field.type === "file" ? (
+            <>
+              <input id={id} name={name} type="file" accept=".pdf,.docx,.jpg,.jpeg,.png,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png" required={Boolean(field.required)} />
+              <small>PDF, DOCX, JPG or PNG · up to 10 MB</small>
+            </>
+          ) : (
+            <input
+              id={id}
+              name={name}
+              type={field.type}
+              placeholder={field.placeholder}
+              required={Boolean(field.required)}
+              maxlength="4000"
+              autocomplete={field.type === "email" ? "email" : field.type === "tel" ? "tel" : "on"}
+            />
+          )}
+        </label>
+      );
+    })}
+    <button class="public-form-submit" type="submit">{form.submitLabel || "Send message"}</button>
+    <p class="public-form-status" role="status" aria-live="polite"></p>
+    <small class="public-form-privacy">Your answers are saved for the website team. Uploaded files use Sanity media URLs and may be accessible to anyone with the file link.</small>
+  </form>
+)}

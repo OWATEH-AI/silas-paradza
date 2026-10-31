@@ -1,3 +1,109 @@
+---
+import ContentSections from "../components/ContentSections.astro";
+import { getDraftModeProps, loadQuery } from "../sanity/lib/load-query";
+import {
+  ARTICLES_QUERY,
+  GALLERY_QUERY,
+  HOME_PAGE_QUERY,
+  HOMEPAGE_MEDIA_QUERY,
+  NAVIGATION_PAGES_QUERY,
+  PROJECTS_QUERY,
+  SERVICES_QUERY,
+} from "../sanity/lib/queries";
+import { imageUrl } from "../sanity/lib/image-url";
+import { stegaClean } from "@sanity/client/stega";
+import { env } from "cloudflare:workers";
+
+interface HomePageContent {
+  heroTitle?: string;
+  heroHighlight?: string;
+  heroSubtitle?: string;
+  heroImage?: unknown;
+  aboutHeading?: string;
+  aboutMotto?: string;
+  aboutBody?: string;
+  phone?: string;
+  email?: string;
+  whatsAppNumber?: string;
+  seo?: { metaTitle?: string; metaDescription?: string };
+}
+
+interface ContentEntry {
+  _id: string;
+  title: string;
+  slug: string;
+  category?: string;
+  summary?: string;
+  excerpt?: string;
+  status?: string;
+  location?: string;
+  publishedAt?: string;
+  featured?: boolean;
+  coverImage?: { asset?: { _id?: string; url?: string }; alt?: string };
+  image?: { asset?: { _id?: string; url?: string }; alt?: string };
+  videoFile?: { asset?: { url?: string; mimeType?: string } };
+  videoUrl?: string;
+  videoPoster?: { asset?: { url?: string }; alt?: string };
+  order?: number;
+  highlights?: Array<{ value?: string; label?: string }>;
+}
+
+interface NavigationPage {
+  _id: string;
+  title: string;
+  slug: string;
+}
+
+const draftProps = getDraftModeProps(Astro.cookies);
+const token = env.SANITY_API_READ_TOKEN;
+const [homeResult, servicesResult, projectsResult, galleryResult, articlesResult, navigationResult, homeMediaResult] = await Promise.all([
+  loadQuery<HomePageContent | null>({ query: HOME_PAGE_QUERY, ...draftProps, token }),
+  loadQuery<ContentEntry[]>({ query: SERVICES_QUERY, ...draftProps, token }),
+  loadQuery<ContentEntry[]>({ query: PROJECTS_QUERY, ...draftProps, token }),
+  loadQuery<ContentEntry[]>({ query: GALLERY_QUERY, ...draftProps, token }),
+  loadQuery<ContentEntry[]>({ query: ARTICLES_QUERY, ...draftProps, token }),
+  loadQuery<NavigationPage[]>({ query: NAVIGATION_PAGES_QUERY, ...draftProps, token }),
+  loadQuery<ContentEntry[]>({ query: HOMEPAGE_MEDIA_QUERY, ...draftProps, token }),
+]);
+
+const homePage = homeResult.data;
+const services = servicesResult.data ?? [];
+const projects = projectsResult.data ?? [];
+const gallery = galleryResult.data ?? [];
+const articles = articlesResult.data ?? [];
+const navigationPages = navigationResult.data ?? [];
+const homeMedia = homeMediaResult.data ?? [];
+const homePhotos = homeMedia.filter((item) => item.image && imageUrl(item.image, 1200));
+const corporatePhotos = homePhotos.filter((item) => item.category?.toLowerCase() === "corporate");
+const profilePhotos = corporatePhotos.filter((item) => /portrait|slide|profile/i.test(item.title));
+const portraitPhotos = (profilePhotos.length > 0
+  ? profilePhotos
+  : corporatePhotos.filter((item) => !/conference|forum/i.test(item.title))
+).slice(0, 6);
+const miningPhotos = homePhotos.filter((item) => item.category?.toLowerCase() === "mining");
+const operationPhotos = homePhotos.filter((item) => item.category?.toLowerCase() === "operations");
+const transportPhotos = homePhotos.filter((item) => item.category?.toLowerCase() === "transport");
+const drivingSchoolPhotos = homePhotos.filter((item) => item.category?.toLowerCase() === "driving school");
+const fleetPhoto = transportPhotos.find((item) => /fleet|logistics/i.test(item.title)) ?? transportPhotos[0];
+const commuterPhoto = transportPhotos.find((item) => /commuter|omnibus/i.test(item.title));
+const heroTitle = homePage?.heroTitle ?? "Driving Progress Through";
+const heroHighlight = homePage?.heroHighlight ?? "Mining & Logistics";
+const heroSubtitle = homePage?.heroSubtitle ?? "Delivering dependable mining and transport solutions with a commitment to operational excellence, efficiency and long-term growth.";
+const heroImage = imageUrl(homePage?.heroImage, 1800);
+const heroSlides = [
+  heroImage,
+  ...articles.map((article) => imageUrl(article.coverImage, 1800)),
+].filter((image): image is string => Boolean(image));
+const socialImage = heroImage ?? imageUrl(portraitPhotos[0]?.image, 1200);
+const miningCardPhotos = [...miningPhotos.slice(1), ...operationPhotos].slice(0, 3);
+const metaTitle = stegaClean(homePage?.seo?.metaTitle ?? "Silas M Paradza (Silas Paradza) — Mining & Transport Logistics Executive | Gweru");
+const metaDescription = stegaClean(homePage?.seo?.metaDescription ?? "Official website of Silas M Paradza, a Zimbabwean entrepreneur in mining, transport, logistics, and business development in Gweru.");
+const contactPhone = stegaClean(homePage?.phone?.trim() || "+263 773 418 643");
+const contactPhoneHref = `tel:${contactPhone.replace(/[^\d+]/g, "")}`;
+const contactEmail = stegaClean(homePage?.email?.trim() || "info@silasparadza.com");
+const whatsappNumber =
+  stegaClean(homePage?.whatsAppNumber?.trim() || "27783396385").replace(/\D/g, "") || "27783396385";
+---
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -6,8 +112,8 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   
   <!-- Page Title & Description (SEO Master Skill) -->
-  <title>Silas M Paradza (Silas Paradza) — Mining & Transport Logistics Executive | Gweru</title>
-  <meta name="description" content="Official website of Silas M Paradza (Silas Paradza), leading Zimbabwean entrepreneur in mining, bulk haulage logistics, transport services, and business development in Gweru. Discover Seed Faith Driving School and industrial solutions." />
+  <title>{metaTitle}</title>
+  <meta name="description" content={metaDescription} />
   <meta name="keywords" content="Silas Paradza, SILAS PARADZA, Silas M Paradza, Silas M. Paradza, Silas Paradza Gweru, Silas Paradza Zimbabwe, Gweru mining, Zimbabwe logistics, bulk haulage Zimbabwe, business development Midlands, transport solutions, Gweru entrepreneur, mining logistics, Seed Faith Driving School, Gweru commuter omnibus" />
   
   <!-- Robots Configuration -->
@@ -21,11 +127,11 @@
   
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="Silas M Paradza (Silas Paradza) — Mining & Transport Logistics Executive" />
-  <meta property="og:description" content="Official website of Silas M Paradza (Silas Paradza), leading Zimbabwean entrepreneur specializing in mining, bulk haulage transport, and business development." />
+  <meta property="og:title" content={metaTitle} />
+  <meta property="og:description" content={metaDescription} />
   <meta property="og:url" content="https://silasmparadza.com/" />
   <meta property="og:site_name" content="Silas M Paradza" />
-  <meta property="og:image" content="https://silasmparadza.com/SILAS%20PARADZA%20Picture/DtbzPVOcl9W7S7xhjtWhpipCV1uz4v4i3s0jkhv7uESvL1kcVqz2vMBN5VOjygJ35XEKMMTWfa2pSX-gzDQZICptFxpocDLIrqzFBzou9lCVbyxhfW1vTH3xmiFWoKKiEhiy0a10oo0qjOYz8208A5w-Qd17tHCD_s_Ghh9HNXg.jpg" />
+  <meta property="og:image" content={socialImage} />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:image:alt" content="Silas M Paradza Executive Portrait" />
@@ -33,28 +139,28 @@
   
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Silas M Paradza (Silas Paradza) — Mining & Transport Logistics Executive" />
-  <meta name="twitter:description" content="Official website of Silas M Paradza (Silas Paradza), leading Zimbabwean entrepreneur specializing in mining, bulk haulage transport, and business development." />
-  <meta name="twitter:image" content="https://silasmparadza.com/SILAS%20PARADZA%20Picture/DtbzPVOcl9W7S7xhjtWhpipCV1uz4v4i3s0jkhv7uESvL1kcVqz2vMBN5VOjygJ35XEKMMTWfa2pSX-gzDQZICptFxpocDLIrqzFBzou9lCVbyxhfW1vTH3xmiFWoKKiEhiy0a10oo0qjOYz8208A5w-Qd17tHCD_s_Ghh9HNXg.jpg" />
+  <meta name="twitter:title" content={metaTitle} />
+  <meta name="twitter:description" content={metaDescription} />
+  <meta name="twitter:image" content={socialImage} />
   <meta name="twitter:image:alt" content="Silas M Paradza Portrait" />
   
   <!-- Preconnect and Preload Assets (SEO Master Skill Rule 8) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@800&display=swap" rel="stylesheet" />
-  <link rel="preload" as="image" href="Dkn-XnZLumBBKvDFgFuT_ZQdwGzLoO_xRXaWCP5TUho4H1nbGFZpQLT4-9LxjQUoiWKAFDFi4hoy8XHHX4BUwUsmnXC2fZzjGfIawfFoKr96sM8ZyYVJxpDaJgJxrPsslzYAmjkMFzYrxM1P1O0y8IFQl988ac7tjL7y8RqT_AKCHmtB_yeOjLa3U6Bs8i4p.jpg" />
+  {heroImage && <link rel="preload" as="image" href={heroImage} />}
   
   <!-- Favicon Set & Theme Info -->
-  <link rel="icon" type="image/jpeg" href="favicon.jpg" />
-  <link rel="apple-touch-icon" href="favicon.jpg" />
-  <link rel="manifest" href="site.webmanifest" />
+  <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
+  <link rel="apple-touch-icon" href="/favicon.jpg" />
+  <link rel="manifest" href="/site.webmanifest" />
   <meta name="theme-color" content="#0F172A" />
 
   <!-- Google Search Console Verification (Replace GSC_TOKEN with your actual token) -->
   <meta name="google-site-verification" content="GSC_TOKEN" />
 
   <!-- Link CSS Style sheet -->
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="/style.css" />
 
   <!-- Schema.org Structured Data (SEO Master Skill Rule 4) -->
   <script type="application/ld+json">
@@ -171,7 +277,7 @@
   }
   </script>
 </head>
-<body>
+<body data-whatsapp-number={whatsappNumber}>
 
   <!-- Sticky Glassmorphic Header -->
   <header class="header" id="header">
@@ -179,38 +285,18 @@
       <a href="#home" class="header__logo" aria-label="Silas Paradza Home">
         SILAS <span class="accent-text">PARADZA</span>
       </a>
-      
-      <nav class="header__nav" id="nav-menu" aria-label="Main Navigation">
-        <ul class="header__list">
-          <li><a href="#home" class="header__link active">Home</a></li>
-          <li><a href="#about" class="header__link">About Silas</a></li>
-          <li><a href="#mining" class="header__link">Mining</a></li>
-          <li><a href="#logistics" class="header__link">Transport & Logistics</a></li>
-          <li class="nav-driving-school-item"><a href="#driving-school" class="header__link">Driving School</a></li>
-          <li><a href="#gallery" class="header__link">Gallery</a></li>
-          <li><a href="#projects" class="header__link">Projects</a></li>
-          <li><a href="#news" class="header__link">News & Insights</a></li>
-          <li><a href="#contact" class="header__link">Contact</a></li>
-          <li class="nav-credits-item"><a href="credits.html" class="header__link header__link--credits">Website Credits</a></li>
-        </ul>
-      </nav>
-
       <div class="header__actions">
-        <!-- Theme Toggle Switch -->
         <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle Light/Dark Mode" title="Toggle Light/Dark Mode">
           <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
             <circle cx="12" cy="12" r="4"></circle>
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41-1.41"></path>
           </svg>
           <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
             <path d="M12 3a6.36 6.36 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
           </svg>
         </button>
-
         <a href="#contact" class="btn btn--primary btn--sm header__cta-btn">Consultation</a>
-        
-        <!-- Mobile Burger Menu Toggle -->
-        <button class="nav-toggle-btn" id="nav-toggle" aria-label="Toggle Navigation Menu" aria-expanded="false">
+        <button class="nav-toggle-btn" id="nav-toggle" type="button" aria-label="Open navigation menu" aria-controls="nav-menu" aria-expanded="false">
           <span class="burger-bar"></span>
           <span class="burger-bar"></span>
           <span class="burger-bar"></span>
@@ -219,21 +305,45 @@
     </div>
   </header>
 
+  <nav class="header__nav" id="nav-menu" aria-label="Main Navigation" aria-hidden="true" inert>
+    <div class="nav-drawer-heading">
+      <span class="nav-drawer-title">Explore the website</span>
+      <button class="nav-drawer-close" id="nav-close" type="button" aria-label="Close navigation menu">&times;</button>
+    </div>
+    <ul class="header__list">
+      <li><a href="#home" class="header__link active">Home</a></li>
+      <li><a href="#about" class="header__link">About Silas</a></li>
+      <li><a href="#mining" class="header__link">Mining</a></li>
+      <li><a href="#logistics" class="header__link">Transport & Logistics</a></li>
+      <li class="nav-driving-school-item"><a href="#driving-school" class="header__link">Driving School</a></li>
+      <li><a href="#gallery" class="header__link">Gallery</a></li>
+      <li><a href="#services" class="header__link">Services</a></li>
+      <li><a href="#projects" class="header__link">Projects</a></li>
+      <li><a href="#news" class="header__link">News & Insights</a></li>
+      <li><a href="#contact" class="header__link">Contact</a></li>
+      {navigationPages.length > 0 && <li class="nav-pages-heading">Pages</li>}
+      {navigationPages.map((page) => (
+        <li><a href={`/pages/${page.slug}`} class="header__link">{page.title}</a></li>
+      ))}
+      <li class="nav-credits-item"><a href="/credits.html" class="header__link header__link--credits">Website Credits</a></li>
+    </ul>
+  </nav>
+  <button class="nav-backdrop" id="nav-backdrop" type="button" aria-label="Close navigation menu" hidden></button>
+
   <main id="main">
     
     <!-- Hero Section with cinematic image background rotations -->
     <section class="hero" id="home">
       <!-- Background Slider Images -->
       <div class="hero__slider">
-        <div class="hero__slide active" style="background-image: linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.85)), url('Dkn-XnZLumBBKvDFgFuT_ZQdwGzLoO_xRXaWCP5TUho4H1nbGFZpQLT4-9LxjQUoiWKAFDFi4hoy8XHHX4BUwUsmnXC2fZzjGfIawfFoKr96sM8ZyYVJxpDaJgJxrPsslzYAmjkMFzYrxM1P1O0y8IFQl988ac7tjL7y8RqT_AKCHmtB_yeOjLa3U6Bs8i4p.jpg');"></div>
-        <div class="hero__slide" style="background-image: linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.85)), url('tAEB-79qS_e6Fi4XFrZMIHkbaT-4dI-TTtz_IRHVsqJ06q0TYK2FP-1RIYWBCHS64zCkvdIyDRmc6BUMocLS9GDTJpNLTn7J8EBcvjPTLQw8x5P_AOtEv6W6d2G5Iw1sv62F0CUZ2xvoYL0dZc-dfCHApH_zRn3MYlB2dkkye8I.jpg');"></div>
-        <div class="hero__slide" style="background-image: linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.85)), url('amkZxVC9UYaft_4EB-XXpkKAJFQUAE4xu1ThQYuzY85JOKTB9tQBoBsy920ts3wntI-v3lSUtGtl4IzHEiaynb-7OWDkNtgEq0LAlTJ6BIZ1jOrxUbCPsqHC87Vm-wcDtA4aztchpCpOkil1MChNNDrLwF5C-lsZqfkHU0OPU71xIMm4bn5ZHvc1r2xEH2uK.jpg');"></div>
-        <div class="hero__slide" style="background-image: linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.85)), url('zAxHdXSJHxKfQ4rmY2kx1ss497CVJcHz0igHfaTBFRt32vpg2XdmXJxQ83rFeQe6UXH4GQ-3p09sZeR-JecMh0UEE65v_Cxf5jtnyomp7MxZ-EkBSSB5u1Jpt9NMRIEkmgU92y6L4Ixr7xenZs6CFQ7oH87Yz_YyTjut-5m2uKQ.jpg');"></div>
+        {heroSlides.map((slideImage, index) => (
+          <div class:list={["hero__slide", index === 0 && "active"]} style={`background-image: linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.85)), url('${slideImage}');`}></div>
+        ))}
       </div>
 
       <div class="hero__content container">
-        <h1 class="hero__title reveal">Driving Progress Through <span class="gradient-text">Mining & Logistics</span> Excellence</h1>
-        <p class="hero__subheadline reveal reveal-delay-1">Delivering dependable mining and transport solutions with a commitment to operational excellence, efficiency and long-term growth.</p>
+        <h1 class="hero__title reveal">{heroTitle} <span class="gradient-text">{heroHighlight}</span></h1>
+        <p class="hero__subheadline reveal reveal-delay-1">{heroSubtitle}</p>
         <div class="hero__ctas reveal reveal-delay-2">
           <a href="#mining" class="btn btn--primary btn--lg">Explore Services</a>
           <a href="#contact" class="btn btn--secondary btn--lg">Request Consultation</a>
@@ -277,35 +387,14 @@
           <div class="portrait-container">
             <div class="portrait-slideshow" id="portrait-slideshow">
 
-              <!-- Slide 1: Silas Paradza portrait (primary) -->
-              <div class="portrait-slide active">
-                <img src="SILAS%20PARADZA%20Picture/sp_slide1.jpg" alt="Silas Paradza" loading="eager" />
-              </div>
-
-              <!-- Slide 2 -->
-              <div class="portrait-slide">
-                <img src="SILAS%20PARADZA%20Picture/sp_slide2.jpg" alt="Silas Paradza" loading="lazy" />
-              </div>
-
-              <!-- Slide 3 -->
-              <div class="portrait-slide">
-                <img src="SILAS%20PARADZA%20Picture/sp_slide3.jpg" alt="Silas Paradza" loading="lazy" />
-              </div>
-
-              <!-- Slide 4 -->
-              <div class="portrait-slide">
-                <img src="SILAS%20PARADZA%20Picture/sp_slide4.jpg" alt="Silas Paradza" loading="lazy" />
-              </div>
-
-              <!-- Slide 5 -->
-              <div class="portrait-slide">
-                <img src="SILAS%20PARADZA%20Picture/sp_slide5.jpg" alt="Silas Paradza" loading="lazy" />
-              </div>
-
-              <!-- Slide 6 -->
-              <div class="portrait-slide">
-                <img src="SILAS%20PARADZA%20Picture/sp_slide6.jpg" alt="Silas Paradza" loading="lazy" />
-              </div>
+              {portraitPhotos.map((photo, index) => {
+                const photoUrl = imageUrl(photo.image, 900);
+                return photoUrl && (
+                  <div class:list={["portrait-slide", index === 0 && "active"]}>
+                    <img src={photoUrl} alt={photo.image?.alt ?? photo.title} loading={index === 0 ? "eager" : "lazy"} />
+                  </div>
+                );
+              })}
 
             </div>
             <div class="portrait-gold-box"></div>
@@ -314,13 +403,19 @@
         
         <div class="about__info flex-col justify-center">
           <span class="eyebrow reveal">Executive Profile</span>
-          <h2 class="section-title reveal">Silas Paradza</h2>
-          <p class="about__motto reveal">"Building Progress Through Reliable Solutions and Meaningful Partnerships."</p>
+          <h2 class="section-title reveal">{homePage?.aboutHeading ?? "Silas Paradza"}</h2>
+          <p class="about__motto reveal">"{homePage?.aboutMotto ?? "Building Progress Through Reliable Solutions and Meaningful Partnerships."}"</p>
           
           <div class="about__text reveal reveal-delay-1">
-            <p>Silas Paradza is a Zimbabwean entrepreneur with interests in mining, transport, logistics, and business development based in Gweru, Midlands Province.</p>
-            <p>Driven by a commitment to excellence, reliability, and long-term value creation, he focuses on building meaningful business relationships and identifying opportunities that contribute to industrial growth and economic development.</p>
-            <p>His approach combines strategic thinking, operational efficiency, and a strong commitment to dependable service delivery.</p>
+            {homePage?.aboutBody ? (
+              homePage.aboutBody.split(/\n\s*\n/).map((paragraph) => <p>{paragraph}</p>)
+            ) : (
+              <>
+                <p>Silas Paradza is a Zimbabwean entrepreneur with interests in mining, transport, logistics, and business development based in Gweru, Midlands Province.</p>
+                <p>Driven by a commitment to excellence, reliability, and long-term value creation, he focuses on building meaningful business relationships and identifying opportunities that contribute to industrial growth and economic development.</p>
+                <p>His approach combines strategic thinking, operational efficiency, and a strong commitment to dependable service delivery.</p>
+              </>
+            )}
           </div>
 
           <div class="about__pillars grid-3 reveal reveal-delay-2">
@@ -430,7 +525,7 @@
 
         <div class="grid-2 operations-grid reveal">
           <div class="operations-visual">
-            <img class="visual-img" src="XCOVfcB2PvD3lcpdEp2wt97k2BhF8M_0_01qS12wuA9_1h-J9KzTKo27k_i5sXIYr5NiRHFsYgTxnGtKi1_VlbcFkoq4_JeClQ2sCS78QHcIpLz_5Iw4LHFdAVo2A_Ferb5ygj5CHEQWYYjCnPQlTs_idGUMMYk65bhKUJ3_0b9Ja0-3_3ZalS7bWVeCohw6.jpg" alt="Mining Site Excavation and Resource Operations" loading="lazy" width="800" height="600" />
+            {miningPhotos[0]?.image && <img class="visual-img" src={imageUrl(miningPhotos[0].image, 1200) ?? ""} alt={miningPhotos[0].image.alt ?? miningPhotos[0].title} loading="lazy" width="800" height="600" />}
             <div class="gold-accent-border"></div>
           </div>
           
@@ -463,33 +558,16 @@
         
         <!-- Interactive Mining Cards -->
         <div class="mining-cards-grid grid-3 reveal reveal-delay-1">
-          <div class="division-card">
-            <div class="division-card__img-wrapper">
-              <img class="division-card__img" src="ffNCsHjHJemx4ktZUjCPYyoFm5JNKtpmwLI8Mclm7jMPjd_pJyq7lJrdzNEqwqc7YbKLJDJy8lNpsOwBIz3fMqBRFKi8WZe6uSyilsq7LgUgRV6jnsij6Eq5PLLgK8IbP1iT8xylWcoWQO4jNbALo2UwA7UouYCDaRTXXIICRDQ.jpg" alt="Mine safety helmets and tools" loading="lazy" />
-            </div>
-            <div class="division-card__content">
-              <h4>Safety Standards</h4>
-              <p>Maintaining full compliance with the Chamber of Mines guidelines. Weekly safety reviews, advanced on-site gear, and risk assessments minimize operating vulnerabilities.</p>
-            </div>
-          </div>
-          <div class="division-card">
-            <div class="division-card__img-wrapper">
-              <img class="division-card__img" src="zRNBwyCdXJLADnhKk2DL6BvWavuKr0713ZK7MDI2_WaP7uDAghJy4-Uq4klFYIxPjM-c8BR0P4O_b5DCMacMLob_EsbAnlrR4Zngl-DnzGIzExKyxdS4dADXH-7kKByYFhX2ZsMvBQazTBUnQlNlNM06DSb49f6l-lxaSvxavNg.jpg" alt="Excavation and operations site detail" loading="lazy" />
-            </div>
-            <div class="division-card__content">
-              <h4>Claim Pegging & Extraction</h4>
-              <p>Handling professional claim pegging, boundary mapping, and regulatory registration, followed by systematic ore extraction maximizing grade recovery and throughput.</p>
-            </div>
-          </div>
-          <div class="division-card">
-            <div class="division-card__img-wrapper">
-              <img class="division-card__img" src="lsmDgkNSVT5NpgbMRT99AdvWI0GjemjhrNoI7cPxBAyjZHhR6PsD3cAOG5D8Yn697FuYS9AWFmKUyAqLysZ3y7GiAGIbGWo-o67s2rfmwdfEAhgESHRndE9yI-DdMSDuLGZ0KAN8VzBEzM8u5Vj61lo-pYdk6dNpqRWcLt_ud73XaxvLOsF3EhoR7qLTfXUV.jpg" alt="Mining site machinery" loading="lazy" />
-            </div>
-            <div class="division-card__content">
-              <h4>Project Partnerships</h4>
-              <p>Developing strategic joint ventures with national and global entities. Supporting Zimbabwe's growth by maintaining ethical, investor-ready structures.</p>
-            </div>
-          </div>
+          {miningCardPhotos.map((photo) => (
+            <article class="division-card" data-sanity={photo._id}>
+              <div class="division-card__img-wrapper">
+                <img class="division-card__img" src={imageUrl(photo.image, 900) ?? ""} alt={photo.image?.alt ?? photo.title} loading="lazy" />
+              </div>
+              <div class="division-card__content">
+                <h4>{photo.title}</h4>
+              </div>
+            </article>
+          ))}
         </div>
       </div>
     </section>
@@ -548,7 +626,7 @@
           
           <div class="logistics-visual">
             <div class="interactive-fleet-display">
-              <img class="fleet-img" src="2CSQzoLPgF-5lG17AGPBILhYLey-dxVmKofgxZBBhBvLuwpozZGnhEuwp-F-s6mTnym6ttg2Ck08Z4ceuLizlGISSLF75-1azvqIcp1m2vAYsQI7Q_lPJmh8j089CBSvlu2Z7dAtlRk4Qn7_X9GbP87SeA9kfWdtK2H0U5a46Sc.jpg" alt="Bulk Logistics Trucks and Fleet Operations" loading="lazy" width="800" height="600" />
+              {fleetPhoto?.image && <img class="fleet-img" src={imageUrl(fleetPhoto.image, 1200) ?? ""} alt={fleetPhoto.image.alt ?? fleetPhoto.title} loading="lazy" width="800" height="600" />}
               <div class="fleet-stats-overlay">
                 <div class="stat-bubble">
                   <span class="stat-number">100%</span>
@@ -652,9 +730,9 @@
               </div>
             </div>
 
-            <div class="operations-visual">
-              <img class="visual-img" src="commuter%20omnibus/WhatsApp%20Image%202026-06-12%20at%2022.57.23.jpeg" alt="Silas Paradza Commuter Omnibus Passenger Transport" loading="lazy" width="800" height="600" />
-            </div>
+            {commuterPhoto?.image && <div class="operations-visual">
+              <img class="visual-img" src={imageUrl(commuterPhoto.image, 1200) ?? ""} alt={commuterPhoto.image.alt ?? commuterPhoto.title} loading="lazy" width="800" height="600" />
+            </div>}
           </div>
         </div>
       </div>
@@ -698,22 +776,12 @@
           
           <div class="driving-visual">
             <div class="driving-gallery-grid">
-              <div class="driving-gallery-item">
-                <img src="Driving School/WhatsApp Image 2026-06-12 at 13.33.52 (1).jpeg" alt="Seed Faith Driving School Motorcycle Training" loading="lazy" />
-                <div class="driving-gallery-caption">Motorcycle Lessons (Class 3)</div>
-              </div>
-              <div class="driving-gallery-item">
-                <img src="Driving School/WhatsApp Image 2026-06-12 at 13.33.51.jpeg" alt="Seed Faith Driving School Training Vehicle" loading="lazy" />
-                <div class="driving-gallery-caption">Class 4 Vehicle Instruction</div>
-              </div>
-              <div class="driving-gallery-item">
-                <img src="Driving School/WhatsApp Image 2026-06-12 at 13.33.51 (1).jpeg" alt="Seed Faith Driving School Learning Sessions" loading="lazy" />
-                <div class="driving-gallery-caption">Practical Maneuvers</div>
-              </div>
-              <div class="driving-gallery-item">
-                <img src="Driving School/WhatsApp Image 2026-06-12 at 13.33.52.jpeg" alt="Seed Faith Driving School Safety Briefing" loading="lazy" />
-                <div class="driving-gallery-caption">Road Safety Instructions</div>
-              </div>
+              {drivingSchoolPhotos.slice(0, 4).map((photo) => (
+                <div class="driving-gallery-item" data-sanity={photo._id}>
+                  <img src={imageUrl(photo.image, 900) ?? ""} alt={photo.image?.alt ?? photo.title} loading="lazy" />
+                  <div class="driving-gallery-caption">{photo.title}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -942,7 +1010,9 @@
     </section>
 
     <!-- Projects Section -->
-    <section class="section projects-section" id="projects">
+    <ContentSections kind="services" items={services} />
+    <ContentSections kind="projects" items={projects} />
+    <section class="section projects-section" id="projects" hidden>
       <div class="container">
         <div class="text-center section-header">
           <span class="eyebrow reveal">Track Record</span>
@@ -999,7 +1069,8 @@
     </section>
 
     <!-- Gallery Section (Masonry Grid with Filters and Lightbox) -->
-    <section class="section gallery-section section--muted" id="gallery">
+    <ContentSections kind="gallery" items={gallery} />
+    <section class="section gallery-section section--muted" id="gallery" hidden>
       <div class="container">
         <div class="text-center section-header">
           <span class="eyebrow reveal">Visual Showcase</span>
@@ -1138,8 +1209,10 @@
       </div>
     </div>
 
+
     <!-- News & Insights Section -->
-    <section class="section news-section" id="news">
+    <ContentSections kind="articles" items={articles} />
+    <section class="section news-section" id="news" hidden>
       <div class="container">
         <div class="text-center section-header">
           <span class="eyebrow reveal">Enterprise Intelligence</span>
@@ -1212,7 +1285,7 @@
               </span>
               <div>
                 <h5>Call Directly</h5>
-                <p><a href="tel:+263773418643" class="hover-underline">+263 773 418 643</a></p>
+                <p><a href={contactPhoneHref} class="hover-underline">{contactPhone}</a></p>
               </div>
             </div>
             <div class="contact-method-item">
@@ -1225,7 +1298,7 @@
               </span>
               <div>
                 <h5>Official Email</h5>
-                <p><a href="mailto:info@silasparadza.com" class="hover-underline">info@silasparadza.com</a></p>
+                <p><a href={`mailto:${contactEmail}`} class="hover-underline">{contactEmail}</a></p>
               </div>
             </div>
             <div class="contact-method-item">
@@ -1311,7 +1384,7 @@
               <button type="submit" class="btn btn--primary btn--lg" id="submit-btn">
                 Send Message
               </button>
-              <a href="https://wa.me/27783396385?text=Hello%2C%20I'd%20like%20to%20enquire%20about%20your%20services."
+              <a href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hello, I'd like to enquire about your services.")}`}
                  class="btn btn--whatsapp" target="_blank" rel="noopener noreferrer" id="wa-form-btn">
                 <svg viewBox="0 0 448 512" width="16" height="16" fill="currentColor" style="margin-right: 8px; vertical-align: middle;">
                   <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.6 15.5 49.3 20.3 67.2 18.8 7.5-1.1 22.8-9.3 26-18.4 3.1-9.1 3.1-16.8 2.2-18.4-.9-1.6-3.3-2.5-8.8-5.3z"/>
@@ -1396,7 +1469,7 @@
         <h4>Headquarters</h4>
         <p>Gweru, Midlands Province</p>
         <p>Zimbabwe</p>
-        <p class="footer__phone"><a href="tel:+263773418643">+263 773 418 643</a></p>
+        <p class="footer__phone"><a href={contactPhoneHref}>{contactPhone}</a></p>
       </div>
     </div>
 
@@ -1405,13 +1478,13 @@
       
       <!-- Minimal Credit Page Access Link -->
       <p class="footer__credits">
-        POWERED BY <a href="credits.html" class="credits-link">ARTGALZIM CENTER</a> – OWA TECHNOLOGIES
+        POWERED BY <a href="/credits.html" class="credits-link">ARTGALZIM CENTER</a> – OWA TECHNOLOGIES
       </p>
     </div>
   </footer>
 
   <!-- Floating WhatsApp Action Widget (Rule 1 WhatsApp API Skill) -->
-  <a href="https://wa.me/27783396385?text=Hello%20and%20welcome.%20Thank%20you%20for%20contacting%20Silas%20Paradza.%20Please%20tell%20us%20how%20we%20can%20assist%20you%20today%20and%20a%20representative%20will%20respond%20as%20soon%20as%20possible." 
+  <a href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hello and welcome. Thank you for contacting Silas Paradza. Please tell us how we can assist you today and a representative will respond as soon as possible.")}`}
      class="whatsapp-float" 
      target="_blank" 
      rel="noopener noreferrer" 
@@ -1427,6 +1500,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
   
   <!-- Main Controller Script -->
-  <script src="script.js"></script>
+  <script is:inline src="/script.js"></script>
 </body>
 </html>

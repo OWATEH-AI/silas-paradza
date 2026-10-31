@@ -1,0 +1,36 @@
+---
+import { escapeHTML, toHTML, uriLooksSafe } from "@portabletext/to-html";
+import type { TypedObject } from "@portabletext/types";
+
+interface Props {
+  value?: TypedObject[];
+}
+
+const { value = [] } = Astro.props;
+const html = value.length > 0
+  ? toHTML(value, {
+      components: {
+        types: {
+          inlineImage: ({ value: blockValue }) => {
+            const image = blockValue as { asset?: { url?: string }; alt?: string };
+            const source = image.asset?.url;
+            if (!source?.startsWith("https://cdn.sanity.io/")) return "";
+            return `<figure><img src="${escapeHTML(source)}" alt="${escapeHTML(image.alt ?? "")}" loading="lazy" /></figure>`;
+          },
+        },
+        marks: {
+          link: ({ children, value: markValue }) => {
+            const link = markValue as { href?: string };
+            const href = link.href ?? "";
+            if (!uriLooksSafe(href)) return children;
+            const external = /^https?:\/\//i.test(href);
+            const rel = external ? ' rel="noopener noreferrer"' : "";
+            return `<a href="${escapeHTML(href)}"${rel}>${children}</a>`;
+          },
+        },
+      },
+    })
+  : "";
+---
+
+{html && <div class="editorial-body" set:html={html} />}

@@ -1,0 +1,64 @@
+---
+import { safeVideoUrl } from "../sanity/lib/safe-video-url";
+
+interface Props {
+  fileUrl?: string;
+  fileType?: string;
+  externalUrl?: string;
+  poster?: string;
+  title: string;
+}
+
+const { fileUrl, fileType, externalUrl, poster, title } = Astro.props;
+let embedUrl: string | undefined;
+let isDirectVideo = Boolean(fileUrl);
+let safeExternalUrl: string | undefined;
+
+if (externalUrl) {
+  try {
+    safeExternalUrl = safeVideoUrl(externalUrl);
+    if (!safeExternalUrl) {
+      throw new Error("Video URLs must use HTTP or HTTPS.");
+    }
+    const parsed = new URL(safeExternalUrl);
+    const host = parsed.hostname.toLowerCase();
+
+    if (host === "youtu.be" || host === "youtube.com" || host.endsWith(".youtube.com")) {
+      const videoId = host === "youtu.be"
+        ? parsed.pathname.split("/").filter(Boolean)[0]
+        : parsed.searchParams.get("v") ?? parsed.pathname.match(/\/(?:embed|shorts)\/([^/?]+)/)?.[1];
+      if (videoId && /^[\w-]{11}$/.test(videoId)) {
+        embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}`;
+      }
+    } else if (host === "vimeo.com" || host.endsWith(".vimeo.com")) {
+      const videoId = parsed.pathname.match(/\/(\d+)(?:$|\/)/)?.[1];
+      if (videoId) embedUrl = `https://player.vimeo.com/video/${videoId}`;
+    } else if (/\.(?:mp4|webm|ogg)$/i.test(parsed.pathname)) {
+      isDirectVideo = true;
+    }
+  } catch (error) {
+    console.warn("Ignoring invalid video URL.", error);
+  }
+}
+const safeSource = fileUrl ?? (isDirectVideo ? safeExternalUrl : undefined);
+---
+
+{safeSource && isDirectVideo ? (
+  <video class="editorial-feature-media" controls preload="metadata" poster={poster}>
+    <source src={safeSource} type={fileType ?? "video/mp4"} />
+    Your browser does not support embedded video.
+  </video>
+) : embedUrl ? (
+  <div class="editorial-video-frame">
+    <iframe
+      src={embedUrl}
+      title={title}
+      loading="lazy"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      referrerpolicy="strict-origin-when-cross-origin"
+      allowfullscreen
+    ></iframe>
+  </div>
+) : safeExternalUrl ? (
+  <p class="editorial-video-link"><a href={safeExternalUrl} target="_blank" rel="noopener noreferrer">Watch {title}</a></p>
+) : null}

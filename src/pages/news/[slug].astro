@@ -1,0 +1,75 @@
+---
+import EditorialPage from "../../components/EditorialPage.astro";
+import PortableText from "../../components/PortableText.astro";
+import VideoEmbed from "../../components/VideoEmbed.astro";
+import PublicForm from "../../components/PublicForm.astro";
+import type { FormDefinition } from "../../sanity/lib/form-types";
+import { ARTICLE_QUERY, FORM_FOR_CONTENT_QUERY } from "../../sanity/lib/queries";
+import { getDraftModeProps, loadQuery } from "../../sanity/lib/load-query";
+import { imageUrl } from "../../sanity/lib/image-url";
+import { stegaClean } from "@sanity/client/stega";
+import type { TypedObject } from "@portabletext/types";
+import { env } from "cloudflare:workers";
+
+export const prerender = false;
+
+interface Story {
+  title: string;
+  slug: string;
+  excerpt?: string;
+  category?: string;
+  author?: string;
+  publishedAt?: string;
+  coverImage?: { asset?: { url?: string }; alt?: string };
+  videoFile?: { asset?: { url?: string; mimeType?: string } };
+  videoUrl?: string;
+  videoPoster?: { asset?: { url?: string }; alt?: string };
+  body?: TypedObject[];
+  seo?: { metaTitle?: string; metaDescription?: string; shareImage?: unknown };
+}
+
+const { data: story } = await loadQuery<Story | null>({
+  query: ARTICLE_QUERY,
+  params: { slug: Astro.params.slug ?? "" },
+  ...getDraftModeProps(Astro.cookies),
+  token: env.SANITY_API_READ_TOKEN,
+});
+
+if (!story) return new Response(null, { status: 404 });
+const { data: attachedForm } = await loadQuery<FormDefinition | null>({
+  query: FORM_FOR_CONTENT_QUERY,
+  params: { contentType: "article", slug: story.slug },
+  ...getDraftModeProps(Astro.cookies),
+  token: env.SANITY_API_READ_TOKEN,
+});
+
+const title = stegaClean(story.seo?.metaTitle || story.title);
+const description = stegaClean(story.seo?.metaDescription || story.excerpt || "");
+const cover = imageUrl(story.coverImage, 1400) ?? story.coverImage?.asset?.url;
+---
+
+<EditorialPage title={title} description={description} image={cover}>
+  <article class="editorial-article">
+    <a class="editorial-back-link" href="/#news">&larr; Back to news</a>
+    <header class="editorial-article__header">
+      {story.category && <span class="eyebrow">{story.category}</span>}
+      <h1 class="section-title">{story.title}</h1>
+      {story.excerpt && <p class="section-subtitle">{story.excerpt}</p>}
+      <p class="editorial-meta">
+        {story.author && <span>By {story.author}</span>}
+        {story.publishedAt && <time datetime={story.publishedAt}>{new Intl.DateTimeFormat("en", { dateStyle: "long" }).format(new Date(story.publishedAt))}</time>}
+      </p>
+    </header>
+    {(story.videoFile?.asset?.url || story.videoUrl) ? (
+      <VideoEmbed
+        fileUrl={story.videoFile?.asset?.url}
+        fileType={story.videoFile?.asset?.mimeType}
+        externalUrl={story.videoUrl}
+        poster={story.videoPoster?.asset?.url}
+        title={story.title}
+      />
+    ) : cover && <img class="editorial-feature-media" src={cover} alt={story.coverImage?.alt ?? title} />}
+    <PortableText value={story.body} />
+    {attachedForm && <PublicForm form={attachedForm} />}
+  </article>
+</EditorialPage>

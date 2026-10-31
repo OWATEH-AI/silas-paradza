@@ -1,0 +1,35 @@
+---
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#101923" />
+    <title>Website desk | Silas Paradza</title>
+    <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
+    <link rel="stylesheet" href="/admin.css?v=3" />
+    <script is:inline>
+      try {
+        const savedTheme = localStorage.getItem("silas-admin-theme");
+        const preferredTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.dataset.theme =
+          savedTheme === "dark" || savedTheme === "light" ? savedTheme : preferredTheme;
+      } catch {
+        document.documentElement.dataset.theme = "light";
+      }
+    </script>
+  </head>
+  <body>
+    <main id="admin-root" aria-live="polite">
+      <section class="admin-loading" aria-label="Loading">
+        <span class="admin-spinner" aria-hidden="true"></span>
+        <p>Opening your website desk…</p>
+      </section>
+    </main>
+    <script>
+      import "../scripts/admin.ts";
+    </script>
+  </body>
+</html>

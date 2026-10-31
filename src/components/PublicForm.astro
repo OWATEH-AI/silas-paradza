@@ -1,0 +1,86 @@
+---
+import type { FormDefinition } from "../sanity/lib/form-types";
+import PublicFormFields from "./PublicFormFields.astro";
+
+interface Props {
+  form: FormDefinition;
+  display?: "popup" | "inline";
+}
+
+const { form, display = "popup" } = Astro.props;
+const modalId = `public-form-${form.slug}`;
+---
+
+{display === "inline" ? (
+  <section class="public-form-inline">
+    <p class="eyebrow">GET IN TOUCH</p>
+    <h2>{form.title}</h2>
+    {form.description && <p class="public-form-description">{form.description}</p>}
+    <PublicFormFields form={form} idPrefix={modalId} sourcePath={Astro.url.pathname} />
+  </section>
+) : (
+  <>
+    <button class="public-form-trigger" type="button" aria-haspopup="dialog" aria-controls={modalId}>{form.title}</button>
+    <dialog class="public-form-dialog" id={modalId} aria-labelledby={`${modalId}-title`}>
+      <div class="public-form-dialog-panel">
+        <header class="public-form-dialog-header">
+          <div>
+            <p class="eyebrow">SEND AN ENQUIRY</p>
+            <h2 id={`${modalId}-title`}>{form.title}</h2>
+            {form.description && <p class="public-form-description">{form.description}</p>}
+          </div>
+          <button class="public-form-close" type="button" aria-label="Close form">×</button>
+        </header>
+        <PublicFormFields form={form} idPrefix={modalId} sourcePath={Astro.url.pathname} />
+      </div>
+    </dialog>
+  </>
+)}
+
+<script is:inline>
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const trigger = target.closest(".public-form-trigger");
+    if (trigger) {
+      const dialog = document.getElementById(trigger.getAttribute("aria-controls") || "");
+      if (dialog instanceof HTMLDialogElement) dialog.showModal();
+    }
+    const close = target.closest(".public-form-close");
+    if (close) close.closest("dialog")?.close();
+    if (target instanceof HTMLDialogElement && target.classList.contains("public-form-dialog")) target.close();
+  });
+
+  document.addEventListener("submit", async (event) => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement) || !form.matches(".public-form")) return;
+    event.preventDefault();
+    const button = form.querySelector('button[type="submit"]');
+    const status = form.querySelector(".public-form-status");
+    if (!(button instanceof HTMLButtonElement) || !(status instanceof HTMLElement)) return;
+    button.disabled = true;
+    status.removeAttribute("role");
+    status.textContent = "Sending your details securely…";
+    try {
+      const response = await fetch(form.action, {
+        method: "POST",
+        body: new FormData(form),
+        credentials: "same-origin",
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Your submission could not be sent.");
+      status.textContent = result.redirect
+        ? "Your message is saved. Opening your selected contact app…"
+        : "Thank you. Your message has been received.";
+      form.reset();
+      if (typeof result.redirect === "string" && /^(https:\/\/wa\.me\/|mailto:)/.test(result.redirect)) {
+        window.location.assign(result.redirect);
+      }
+    } catch (error) {
+      status.setAttribute("role", "alert");
+      status.textContent = error instanceof Error ? error.message : "Your submission could not be sent.";
+    } finally {
+      button.disabled = false;
+    }
+  });
+</script>

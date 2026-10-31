@@ -1,0 +1,38 @@
+{
+  "name": "silas-paradza",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Silas Paradza website and Sanity content studio",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build && wrangler deploy --config wrangler.worker.jsonc --dry-run --outdir .wrangler/pages-worker-bundle && node scripts/package-pages-worker.mjs",
+    "preview": "wrangler pages dev ./dist/client",
+    "studio:deploy": "sanity deploy",
+    "schema:deploy": "sanity schema deploy",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^14.4.2",
+    "@astrojs/react": "^7.1.1",
+    "@portabletext/to-html": "^6.0.0",
+    "@sanity/astro": "^3.6.0",
+    "@sanity/preview-url-secret": "^4.1.5",
+    "@sanity/vision": "^6.20.0",
+    "@sanity/visual-editing": "^6.2.0",
+    "astro": "^7.4.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-is": "^19.3.1",
+    "sanity": "^6.20.0",
+    "styled-components": "^6.6.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.12",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/react-is": "^19.3.0",
+    "typescript": "^6.0.3"
+  }
+}

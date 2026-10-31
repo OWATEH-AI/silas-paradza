@@ -1,0 +1,81 @@
+---
+import { env } from "cloudflare:workers";
+import { NAVIGATION_PAGES_QUERY } from "../sanity/lib/queries";
+import { getDraftModeProps, loadQuery } from "../sanity/lib/load-query";
+
+interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+}
+
+const { title, description, image } = Astro.props;
+const { data: navigationPages } = await loadQuery<Array<{ title: string; slug: string }>>({
+  query: NAVIGATION_PAGES_QUERY,
+  ...getDraftModeProps(Astro.cookies),
+  token: env.SANITY_API_READ_TOKEN,
+});
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="index, follow" />
+    <title>{title} | Silas Paradza</title>
+    {description && <meta name="description" content={description} />}
+    {image && <meta property="og:image" content={image} />}
+    <link rel="canonical" href={`https://silasmparadza.com${Astro.url.pathname}`} />
+    <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="header scrolled" id="header">
+      <div class="header__container">
+        <a href="/" class="header__logo" aria-label="Silas Paradza home">SILAS <span class="accent-text">PARADZA</span></a>
+        <div class="header__actions">
+          <a href="/#contact" class="btn btn--primary btn--sm header__cta-btn">Consultation</a>
+          <button class="nav-toggle-btn" id="nav-toggle" type="button" aria-label="Open navigation menu" aria-controls="nav-menu" aria-expanded="false">
+            <span class="burger-bar"></span>
+            <span class="burger-bar"></span>
+            <span class="burger-bar"></span>
+          </button>
+        </div>
+      </div>
+    </header>
+    <nav class="header__nav" id="nav-menu" aria-label="Main navigation" aria-hidden="true" inert>
+      <div class="nav-drawer-heading">
+        <span class="nav-drawer-title">Explore the website</span>
+        <button class="nav-drawer-close" id="nav-close" type="button" aria-label="Close navigation menu">&times;</button>
+      </div>
+      <ul class="header__list">
+        <li><a href="/#home" class="header__link">Home</a></li>
+        <li><a href="/#about" class="header__link">About Silas</a></li>
+        <li><a href="/#mining" class="header__link">Mining</a></li>
+        <li><a href="/#logistics" class="header__link">Transport &amp; Logistics</a></li>
+        <li><a href="/#driving-school" class="header__link">Driving School</a></li>
+        <li><a href="/#gallery" class="header__link">Gallery</a></li>
+        <li><a href="/#services" class="header__link">Services</a></li>
+        <li><a href="/#projects" class="header__link">Projects</a></li>
+        <li><a href="/#news" class="header__link">News &amp; Insights</a></li>
+        <li><a href="/#contact" class="header__link">Contact</a></li>
+        {navigationPages && navigationPages.length > 0 && <li class="nav-pages-heading">Pages</li>}
+        {navigationPages?.map((page) => (
+          <li><a href={`/pages/${page.slug}`} class="header__link">{page.title}</a></li>
+        ))}
+      </ul>
+    </nav>
+    <button class="nav-backdrop" id="nav-backdrop" type="button" aria-label="Close navigation menu" hidden></button>
+    <main class="editorial-page">
+      <slot />
+    </main>
+    <footer class="footer">
+      <div class="container footer__bottom">
+        <p class="footer__copy">&copy; 2026 Silas Paradza. All Rights Reserved.</p>
+        <a href="/" class="credits-link">Back to homepage</a>
+      </div>
+    </footer>
+    <script is:inline src="/script.js"></script>
+  </body>
+</html>
