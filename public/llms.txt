@@ -8,7 +8,8 @@ The official website of Silas Paradza, a prominent Zimbabwean entrepreneur and b
 - **Operations & Industries**: 
   - **Mining Operations**: Gold mining, chrome extraction, resource management, and regional mining ventures in Gweru and the Midlands Province, Zimbabwe.
   - **Transport & Logistics**: Cross-border logistics, heavy haulage, dry bulk shipping, supply chain integration across Southern Africa (SADC region).
-- **Makers / Developers**: Built and designed by **ARTGALZIM CENTER** in collaboration with **OWA TECHNOLOGIES**.
+- **Website Creator & Developer**: **Samuel Tashinga Samoyo**, also known as **LYKART OSIX** and **LYKART06**; founder of **OWA Technologies**.
+- **Delivery Partners**: Built and designed with **ARTGALZIM CENTER** and **OWA TECHNOLOGIES**.
 - **Developer Contacts**:
   - WhatsApp/Phone: +263 77 247 9492 / +263 71 694 4086
 - **Contact Details for Silas Paradza**:
@@ -25,4 +26,4 @@ The official website of Silas Paradza, a prominent Zimbabwean entrepreneur and b
   - **Projects**: Summary of active investments and corporate responsibility initiatives.
   - **News & Insights**: Industry commentary and regional press releases.
   - **Contact**: Location map, call links, and interactive contact form with WhatsApp redirection.
-- [/credits.html](https://silasparadza.com/credits.html): Dedicated credits and engineering logs page. Details the visual architecture, performance optimizations, and developers' contact information (+263 77 247 9492 / +263 71 694 4086).
+- [/credits.html](https://silasmparadza.com/credits.html): Website credits and developer profile for Samuel Tashinga Samoyo (LYKART OSIX / LYKART06), founder of OWA Technologies.
