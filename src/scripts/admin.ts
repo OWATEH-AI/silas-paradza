@@ -255,7 +255,7 @@ function editorMarkup(type: ContentType, doc: DocumentRecord | null): string {
     : isNew
       ? `Create ${singularLabels[type]}`
       : `Edit ${doc?.title ?? "content"}`;
-  return `<dialog class="admin-editor-drawer" aria-labelledby="editor-title"><div class="admin-drawer-panel"><header class="admin-drawer-header"><div><p class="admin-eyebrow">${isHome ? "WEBSITE CONTENT" : escapeHtml(labels[type]).toUpperCase()}</p><h1 id="editor-title">${escapeHtml(title)}</h1><p>Work through each tab, then save a draft or publish your changes.</p></div><button class="admin-drawer-close" type="button" data-action="cancel" aria-label="Close editor">×</button></header><form id="admin-content-form" class="admin-form"><nav class="admin-editor-tabs" role="tablist" aria-label="Content sections"></nav><div class="admin-editor-workspace"><div class="admin-form-sections">${editorFields(type, doc)}</div><aside class="admin-live-preview" aria-label="Live website preview"><div class="admin-preview-toolbar"><div><strong>Live preview</strong><small>Updates as you edit</small></div><div class="admin-preview-devices" role="group" aria-label="Preview size"><button type="button" class="is-active" data-preview-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-preview-device="mobile" aria-pressed="false">Mobile</button></div></div><div class="admin-preview-frame-wrap"><iframe class="admin-preview-frame" title="Website draft preview" sandbox="allow-same-origin"></iframe></div></aside></div><div class="admin-form-actions"><button class="admin-button admin-button--quiet" type="button" data-action="cancel">Cancel</button>${doc?._id && !isHome ? '<button class="admin-button admin-button--danger" type="button" data-action="delete">Delete</button>' : ""}<button class="admin-button admin-button--secondary" type="submit" data-submit="save">Save draft</button><button class="admin-button admin-button--primary" type="submit" data-submit="publish">Publish to website</button></div><p class="admin-form-message" role="status"></p></form></div></dialog>`;
+  return `<dialog class="admin-editor-drawer" aria-labelledby="editor-title"><div class="admin-drawer-panel"><header class="admin-drawer-header"><div><p class="admin-eyebrow">${isHome ? "WEBSITE CONTENT" : escapeHtml(labels[type]).toUpperCase()}</p><h1 id="editor-title">${escapeHtml(title)}</h1><p>Work through each tab, then save a draft or publish your changes.</p></div><button class="admin-drawer-close" type="button" data-action="cancel" aria-label="Close editor">×</button></header><form id="admin-content-form" class="admin-form"><div class="admin-editor-navigation"><nav class="admin-editor-tabs" role="tablist" aria-label="Content sections"></nav><button class="admin-preview-toggle" type="button" data-preview-toggle aria-controls="admin-live-preview" aria-expanded="false">Preview</button></div><div class="admin-editor-workspace"><div class="admin-form-sections">${editorFields(type, doc)}</div><aside class="admin-live-preview" id="admin-live-preview" aria-label="Live website preview"><div class="admin-preview-toolbar"><div><strong>Live preview</strong><small>Updates as you edit</small></div><div class="admin-preview-toolbar-actions"><div class="admin-preview-devices" role="group" aria-label="Preview size"><button type="button" class="is-active" data-preview-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-preview-device="mobile" aria-pressed="false">Mobile</button></div><button class="admin-preview-close" type="button" data-preview-close aria-label="Close live preview">Close preview</button></div></div><div class="admin-preview-frame-wrap"><iframe class="admin-preview-frame" title="Website draft preview" sandbox="allow-same-origin"></iframe></div></aside></div><div class="admin-form-actions"><button class="admin-button admin-button--quiet" type="button" data-action="cancel">Cancel</button>${doc?._id && !isHome ? '<button class="admin-button admin-button--danger" type="button" data-action="delete">Delete</button>' : ""}<button class="admin-button admin-button--secondary" type="submit" data-submit="save">Save draft</button><button class="admin-button admin-button--primary" type="submit" data-submit="publish">Publish to website</button></div><p class="admin-form-message" role="status"></p></form></div></dialog>`;
 }
 
 function listRow(doc: DocumentRecord): string {
@@ -283,6 +283,24 @@ function sidebar(): string {
         `<button class="admin-nav-item ${state.active === key ? "is-active" : ""}" type="button" data-nav="${key}"><span class="admin-nav-dot"></span>${label}</button>`,
     )
     .join("")}</nav><div class="admin-sidebar-bottom"><span class="admin-avatar">SP</span><span><strong>Website editor</strong><small>Silas Paradza</small></span><button type="button" class="admin-logout" data-action="logout" aria-label="Sign out">↗</button></div></aside>`;
+}
+
+function mobileNavigation(): string {
+  const activeGroup = state.active === "overview" ? "overview" : state.active === "page" ? "pages" : "content";
+  const contentItems: Array<[AdminSection, string]> = [
+    ["homePage", "Homepage"],
+    ["article", "News"],
+    ["service", "Services"],
+    ["project", "Projects"],
+    ["galleryItem", "Gallery"],
+    ["forms", "Forms & inbox"],
+  ];
+  return `<nav class="admin-mobile-navigation" aria-label="Mobile content management"><div class="admin-mobile-tabs" role="tablist" aria-label="Admin sections"><button type="button" role="tab" aria-selected="${activeGroup === "overview"}" class="${activeGroup === "overview" ? "is-active" : ""}" data-mobile-group="overview">Overview</button><button type="button" role="tab" aria-selected="${activeGroup === "content"}" class="${activeGroup === "content" ? "is-active" : ""}" data-mobile-group="content">Content</button><button type="button" role="tab" aria-selected="${activeGroup === "pages"}" class="${activeGroup === "pages" ? "is-active" : ""}" data-mobile-group="pages">Pages</button></div>${activeGroup === "content" ? `<div class="admin-mobile-content-options" aria-label="Content options">${contentItems
+    .map(
+      ([key, label]) =>
+        `<button type="button" class="${state.active === key ? "is-active" : ""}" data-mobile-content="${key}"${state.active === key ? ' aria-current="page"' : ""}>${label}</button>`,
+    )
+    .join("")}</div>` : ""}</nav>`;
 }
 
 function documentTitle(doc: DocumentRecord): string {
@@ -407,7 +425,7 @@ function overview(): string {
 
 function renderShell(content: string, drawer = ""): void {
   if (!root) return;
-  root.innerHTML = `<div class="admin-app">${sidebar()}<main class="admin-main"><header class="admin-topbar"><a class="admin-topbar-home" href="/" aria-label="Back to website">← <span>View website</span></a><span class="admin-topbar-label">SILAS WEBSITE DESK</span><div class="admin-topbar-actions">${themeButton()}<button type="button" class="admin-topbar-signout" data-action="logout">Sign out</button></div></header>${content}</main>${drawer}</div>`;
+  root.innerHTML = `<div class="admin-app">${sidebar()}<main class="admin-main"><header class="admin-topbar"><a class="admin-topbar-home" href="/" aria-label="Back to website">← <span>View website</span></a><span class="admin-topbar-label">SILAS WEBSITE DESK</span><div class="admin-topbar-actions">${themeButton()}<button type="button" class="admin-topbar-signout" data-action="logout">Sign out</button></div></header>${mobileNavigation()}${content}</main>${drawer}</div>`;
   bindShellEvents();
   const dialog = root.querySelector<HTMLDialogElement>(".admin-editor-drawer");
   if (dialog) {
@@ -419,7 +437,11 @@ function renderShell(content: string, drawer = ""): void {
     dialog.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        closeEditor();
+        if (dialog.classList.contains("is-preview-open")) {
+          setPreviewOpen(dialog, false);
+        } else {
+          closeEditor();
+        }
       }
     });
     dialog.addEventListener("click", (event) => {
@@ -427,6 +449,11 @@ function renderShell(content: string, drawer = ""): void {
     });
     dialog.showModal();
     renderLivePreview();
+    dialog.querySelectorAll<HTMLButtonElement>("[data-preview-toggle], [data-preview-close]").forEach((button) => {
+      button.addEventListener("click", () => {
+        setPreviewOpen(dialog, !dialog.classList.contains("is-preview-open"));
+      });
+    });
   }
   const formDialog = root.querySelector<HTMLDialogElement>(".admin-form-builder-dialog");
   if (formDialog) {
@@ -450,6 +477,27 @@ function render(): void {
       ? editorMarkup(state.editing._type, state.editing)
       : "";
   renderShell(content, drawer);
+}
+
+function setPreviewOpen(dialog: HTMLDialogElement, open: boolean): void {
+  const blockedElements = [
+    dialog.querySelector<HTMLElement>(".admin-drawer-header"),
+    dialog.querySelector<HTMLElement>(".admin-editor-tabs"),
+    dialog.querySelector<HTMLElement>(".admin-form-sections"),
+    dialog.querySelector<HTMLElement>(".admin-form-actions"),
+    dialog.querySelector<HTMLElement>(".admin-form-message"),
+  ].filter((element): element is HTMLElement => element !== null);
+  dialog.classList.toggle("is-preview-open", open);
+  for (const element of blockedElements) element.inert = open;
+  dialog.querySelectorAll<HTMLButtonElement>("[data-preview-toggle]").forEach((button) => {
+    button.setAttribute("aria-expanded", String(open));
+    button.textContent = open ? "Close preview" : "Preview";
+  });
+  if (open) {
+    dialog.querySelector<HTMLButtonElement>("[data-preview-close]")?.focus();
+  } else {
+    dialog.querySelector<HTMLButtonElement>("[data-preview-toggle]")?.focus();
+  }
 }
 
 function setupEditorTabs(dialog: HTMLDialogElement): void {
@@ -1043,23 +1091,35 @@ function openNewMenu(): void {
   dialog.showModal();
 }
 
+function navigateToSection(destination: AdminSection): void {
+  state.active = destination;
+  state.filter = "";
+  state.uploads = {};
+  state.editingForm = null;
+  state.builderFields = [];
+  if (destination === "forms") state.formsTab = "forms";
+  state.returnFocusId = destination;
+  state.editing =
+    destination === "homePage"
+      ? (state.documents.find((item) => item._type === "homePage") ?? { _id: "homePage", _type: "homePage" })
+      : null;
+  render();
+}
+
 function bindShellEvents(): void {
   root?.querySelectorAll<HTMLElement>("[data-nav]").forEach((button) => {
+    button.addEventListener("click", () => navigateToSection(button.dataset.nav as AdminSection));
+  });
+  root?.querySelectorAll<HTMLButtonElement>("[data-mobile-group]").forEach((button) => {
     button.addEventListener("click", () => {
-      const destination = button.dataset.nav as AdminSection;
-      state.active = destination;
-      state.filter = "";
-      state.uploads = {};
-      state.editingForm = null;
-      state.builderFields = [];
-      if (destination === "forms") state.formsTab = "forms";
-      state.returnFocusId = destination;
-      state.editing =
-        destination === "homePage"
-          ? (state.documents.find((item) => item._type === "homePage") ?? { _id: "homePage", _type: "homePage" })
-          : null;
-      render();
+      const group = button.dataset.mobileGroup;
+      navigateToSection(group === "overview" ? "overview" : group === "pages" ? "page" : (
+        state.active !== "overview" && state.active !== "page" ? state.active : "article"
+      ));
     });
+  });
+  root?.querySelectorAll<HTMLButtonElement>("[data-mobile-content]").forEach((button) => {
+    button.addEventListener("click", () => navigateToSection(button.dataset.mobileContent as AdminSection));
   });
   root?.querySelectorAll<HTMLButtonElement>("[data-edit-id]").forEach((button) => {
     button.addEventListener("click", () => {
