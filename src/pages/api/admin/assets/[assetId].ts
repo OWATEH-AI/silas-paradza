@@ -26,7 +26,7 @@ export const GET: APIRoute = async ({ params, request }) => {
 
   const client = createAdminSanityClient();
   if (!client) {
-    return Response.json({ error: "Sanity write access is not configured." }, { status: 503 });
+    return Response.json({ error: "Media downloads are not configured on this website." }, { status: 503 });
   }
 
   try {

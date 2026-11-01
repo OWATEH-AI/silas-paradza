@@ -34,6 +34,7 @@ type AdminForm = {
 
 type FormSubmissionRecord = {
   _id: string;
+  formId?: string;
   formTitle?: string;
   submittedAt?: string;
   status?: "new" | "read" | "archived";
@@ -44,6 +45,12 @@ type FormSubmissionRecord = {
     fileName?: string;
     file?: { asset?: { _ref?: string } };
   }>;
+};
+
+type FormSubmissionPage = {
+  submissions: FormSubmissionRecord[];
+  total: number;
+  nextOffset: number | null;
 };
 
 type DocumentRecord = {
@@ -91,6 +98,12 @@ const state = {
   editing: null as DocumentRecord | null,
   editingForm: null as AdminForm | null,
   formsTab: "forms" as "forms" | "inbox",
+  selectedFormId: null as string | null,
+  selectedFormSubmissions: [] as FormSubmissionRecord[],
+  selectedFormTotal: 0,
+  selectedFormNextOffset: null as number | null,
+  loadingFormSubmissions: false,
+  formSubmissionsError: "",
   builderFields: [] as AdminFormField[],
   uploads: {} as Record<string, UploadedAsset>,
   filter: "",
@@ -329,6 +342,10 @@ function formTargetLabel(form: AdminForm): string {
   return target ? `${placement} ${documentTitle(target)} · ${position}` : `${placement} ${form.displayOnSlug} · ${position}`;
 }
 
+function canonicalFormId(id: string): string {
+  return id.replace(/^drafts\./, "");
+}
+
 function formFieldRows(fields: AdminFormField[]): string {
   const types: FormFieldType[] = ["text", "email", "tel", "url", "textarea", "select", "checkbox", "file"];
   return fields.map((item, index) => `<fieldset class="admin-form-field-row" data-builder-field="${escapeHtml(item.name)}"><legend>Field ${index + 1}</legend><input type="hidden" data-builder-name value="${escapeHtml(item.name)}" /><label class="admin-field"><span>Visitor-facing label</span><input type="text" data-builder-label value="${escapeHtml(item.label)}" maxlength="80" required /></label><label class="admin-field"><span>Field type</span><select data-builder-type>${types.map((type) => `<option value="${type}" ${item.type === type ? "selected" : ""}>${type === "textarea" ? "Long answer" : type === "tel" ? "Phone number" : type === "file" ? "Document upload" : type.charAt(0).toUpperCase() + type.slice(1)}</option>`).join("")}</select></label><label class="admin-field"><span>Placeholder or hint</span><input type="text" data-builder-placeholder value="${escapeHtml(item.placeholder || "")}" maxlength="120" /></label><label class="admin-field"><span>Choices (select only, comma separated)</span><input type="text" data-builder-options value="${escapeHtml((item.options || []).join(", "))}" placeholder="Option one, Option two" /></label><label class="admin-check"><input type="checkbox" data-builder-required ${item.required ? "checked" : ""} /><span>Required field</span></label><button class="admin-list-action admin-list-action--delete" type="button" data-builder-remove="${escapeHtml(item.name)}" aria-label="Remove ${escapeHtml(item.label)}">Remove field</button></fieldset>`).join("");
@@ -358,11 +375,17 @@ function formEditorMarkup(form: AdminForm): string {
   const ctaVariants = [["primary", "Featured gold button"], ["outline", "Outlined button"], ["text", "Simple text link"]];
   const isDraft = form.isDraft === true || form._id.startsWith("drafts.");
   const id = form._id.replace(/^drafts\./, "");
-  return `<dialog class="admin-form-builder-dialog" aria-labelledby="form-builder-title"><form id="admin-form-builder" class="admin-form-builder" novalidate><header class="admin-form-builder-header"><div><p class="admin-eyebrow">FORM BUILDER</p><h1 id="form-builder-title">${form._id ? `Edit ${escapeHtml(form.title || "form")}` : "Create a form"}</h1><p>Choose one destination, the button placement and style, and where submissions go.</p></div><button class="admin-dialog-close" type="button" data-form-action="close" aria-label="Close form builder">×</button></header><div class="admin-form-builder-body"><section class="admin-form-builder-section"><h2>Form details</h2><label class="admin-field"><span>Form name</span><input name="title" value="${escapeHtml(form.title)}" maxlength="100" required /></label><label class="admin-field"><span>Standalone form page address</span><input name="slug" value="${escapeHtml(form.slug || "")}" placeholder="Generated from the form name" maxlength="80" /><small>Used when you choose “Standalone form page”.</small></label><label class="admin-field"><span>Introduction</span><textarea name="description" rows="3" maxlength="300">${escapeHtml(form.description || "")}</textarea></label><label class="admin-field"><span>Send button label</span><input name="submitLabel" value="${escapeHtml(form.submitLabel || "Send message")}" maxlength="40" /></label><label class="admin-field"><span>Where should this form appear?</span><select name="displayOn"><option value="">Standalone form page only</option>${targetOptions}</select><small>Publish a new page first; it will then appear in this list. The form is shown only at the selected destination.</small></label><label class="admin-field"><span>Page presentation</span><select name="displayMode">${displayModes.map(([value, label]) => `<option value="${value}" ${(form.displayMode || "popup") === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="admin-field"><span>Button placement on the selected page</span><select name="ctaPlacement">${ctaPlacements.map(([value, label]) => `<option value="${value}" ${(form.ctaPlacement || "afterContent") === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="admin-field"><span>Page call-to-action button text</span><input name="ctaLabel" value="${escapeHtml(form.ctaLabel || "Send an enquiry")}" maxlength="50" placeholder="Apply now, Request a quote…" /></label><label class="admin-field"><span>Page call-to-action style</span><select name="ctaVariant">${ctaVariants.map(([value, label]) => `<option value="${value}" ${(form.ctaVariant || "primary") === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="admin-check"><input type="checkbox" name="active" ${form.active === false ? "" : "checked"} /><span>Accept submissions when published</span></label></section><section class="admin-form-builder-section"><div class="admin-form-builder-section-heading"><div><h2>Visitor fields</h2><p>Set each field to required or optional.</p></div><button class="admin-button admin-button--secondary" type="button" data-form-action="add-field">＋ Add field</button></div><div class="admin-builder-fields">${formFieldRows(state.builderFields)}</div></section><section class="admin-form-builder-section"><h2>After Send</h2><label class="admin-field"><span>Submission destination</span><select name="delivery">${options.map(([value, label]) => `<option value="${value}" ${(form.delivery || "inbox") === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="admin-field"><span>WhatsApp number or email address</span><input name="destination" value="${escapeHtml(form.destination || "")}" placeholder="Country code + number or recipient@example.com" /></label><label class="admin-field"><span>Google Forms embed URL</span><input name="googleFormUrl" type="url" value="${escapeHtml(form.googleFormUrl || "")}" placeholder="https://docs.google.com/forms/d/e/…/viewform?embedded=true" /></label><p class="admin-form-note">Website inbox saves submissions to Sanity. WhatsApp/email saves first, then opens the visitor’s contact app with a prepared message. Google Forms submissions are collected by Google, not this inbox. Uploaded files are public Sanity CDN assets; do not request highly confidential documents.</p></section></div><footer class="admin-form-builder-actions"><button class="admin-button admin-button--quiet" type="button" data-form-action="close">Cancel</button>${form._id ? `<button class="admin-button admin-button--danger" type="button" data-form-action="delete" data-form-id="${escapeHtml(form._id)}">Delete form</button>` : ""}<button class="admin-button admin-button--secondary" type="submit" data-form-submit="save">Save draft</button><button class="admin-button admin-button--primary" type="submit" data-form-submit="publish">Publish form</button></footer><p class="admin-form-builder-message" role="status"></p><input type="hidden" name="id" value="${escapeHtml(id)}" /><input type="hidden" name="draft" value="${isDraft}" /></form></dialog>`;
+  return `<dialog class="admin-form-builder-dialog" aria-labelledby="form-builder-title"><form id="admin-form-builder" class="admin-form-builder" novalidate><header class="admin-form-builder-header"><div><p class="admin-eyebrow">FORM BUILDER</p><h1 id="form-builder-title">${form._id ? `Edit ${escapeHtml(form.title || "form")}` : "Create a form"}</h1><p>Choose the page, button placement, style, and submission destination.</p></div><button class="admin-dialog-close" type="button" data-form-action="close" aria-label="Close form builder">×</button></header><div class="admin-form-builder-body"><section class="admin-form-builder-section"><h2>Form details</h2><label class="admin-field"><span>Form name</span><input name="title" value="${escapeHtml(form.title)}" maxlength="100" required /></label><label class="admin-field"><span>Standalone form page address</span><input name="slug" value="${escapeHtml(form.slug || "")}" placeholder="Generated from the form name" maxlength="80" /><small>Used when you choose “Standalone form page”.</small></label><label class="admin-field"><span>Introduction</span><textarea name="description" rows="3" maxlength="300">${escapeHtml(form.description || "")}</textarea></label><label class="admin-field"><span>Send button label</span><input name="submitLabel" value="${escapeHtml(form.submitLabel || "Send message")}" maxlength="40" /></label><label class="admin-field"><span>Where should this form appear?</span><select name="displayOn"><option value="">Standalone form page only</option>${targetOptions}</select><small>Publish a new page first; it will then appear in this list. The form is shown only at the selected destination.</small></label><label class="admin-field"><span>Page presentation</span><select name="displayMode">${displayModes.map(([value, label]) => `<option value="${value}" ${(form.displayMode || "popup") === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="admin-field"><span>Button placement on the selected page</span><select name="ctaPlacement">${ctaPlacements.map(([value, label]) => `<option value="${value}" ${(form.ctaPlacement || "afterContent") === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="admin-field"><span>Page call-to-action button text</span><input name="ctaLabel" value="${escapeHtml(form.ctaLabel || "Send an enquiry")}" maxlength="50" placeholder="Apply now, Request a quote…" /></label><label class="admin-field"><span>Page call-to-action style</span><select name="ctaVariant">${ctaVariants.map(([value, label]) => `<option value="${value}" ${(form.ctaVariant || "primary") === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="admin-check"><input type="checkbox" name="active" ${form.active === false ? "" : "checked"} /><span>Accept submissions when published</span></label></section><section class="admin-form-builder-section"><div class="admin-form-builder-section-heading"><div><h2>Visitor fields</h2><p>Set each field to required or optional.</p></div><button class="admin-button admin-button--secondary" type="button" data-form-action="add-field">＋ Add field</button></div><div class="admin-builder-fields">${formFieldRows(state.builderFields)}</div></section><section class="admin-form-builder-section"><h2>After Send</h2><label class="admin-field"><span>Submission destination</span><select name="delivery">${options.map(([value, label]) => `<option value="${value}" ${(form.delivery || "inbox") === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="admin-field"><span>WhatsApp number or email address</span><input name="destination" value="${escapeHtml(form.destination || "")}" placeholder="Country code + number or recipient@example.com" /></label><label class="admin-field"><span>Google Forms embed URL</span><input name="googleFormUrl" type="url" value="${escapeHtml(form.googleFormUrl || "")}" placeholder="https://docs.google.com/forms/d/e/…/viewform?embedded=true" /></label></section></div><footer class="admin-form-builder-actions"><button class="admin-button admin-button--quiet" type="button" data-form-action="close">Cancel</button>${form._id ? `<button class="admin-button admin-button--danger" type="button" data-form-action="delete" data-form-id="${escapeHtml(form._id)}">Delete form</button>` : ""}<button class="admin-button admin-button--secondary" type="submit" data-form-submit="save">Save draft</button><button class="admin-button admin-button--primary" type="submit" data-form-submit="publish">Publish form</button></footer><p class="admin-form-builder-message" role="status"></p><input type="hidden" name="id" value="${escapeHtml(id)}" /><input type="hidden" name="draft" value="${isDraft}" /></form></dialog>`;
 }
 
 function formsDashboard(): string {
   const showingInbox = state.formsTab === "inbox";
+  const selectedFormId = state.selectedFormId;
+  const selectedForm = selectedFormId
+    ? state.forms.find((form) => form._id === selectedFormId) ??
+      state.forms.find((form) => canonicalFormId(form._id) === canonicalFormId(selectedFormId))
+    : undefined;
+  const visibleSubmissions = selectedForm ? state.selectedFormSubmissions : state.submissions;
   const formsContent = state.forms.length
     ? `<div class="admin-list">${state.forms.map((form) => {
         const draft = form.isDraft === true || form._id.startsWith("drafts.");
@@ -383,11 +406,11 @@ function formsDashboard(): string {
         const formLink = canPreview
           ? `<a class="admin-form-route" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">Preview destination ↗</a>`
           : escapeHtml(href || "Destination not set");
-        return `<div class="admin-list-row"><span class="admin-list-icon">F</span><span class="admin-list-text"><strong>${escapeHtml(form.title || "Untitled form")}</strong><small>${escapeHtml(formTargetLabel(form))} · ${formLink}</small></span><span class="admin-status ${draft ? "admin-status--draft" : ""}">${draft ? "Draft" : form.active === false ? "Paused" : "Live"}</span><span class="admin-list-actions"><button type="button" class="admin-list-action" data-edit-form="${escapeHtml(form._id)}">Edit</button>${draft ? `<button type="button" class="admin-list-action" data-publish-form="${escapeHtml(publishId)}">Publish</button>` : ""}<button type="button" class="admin-list-action admin-list-action--delete" data-delete-form="${escapeHtml(form._id)}">Delete</button></span></div>`;
+        return `<div class="admin-list-row admin-form-list-row"><span class="admin-list-icon">F</span><span class="admin-list-text"><strong>${escapeHtml(form.title || "Untitled form")}</strong><small>${escapeHtml(formTargetLabel(form))} · ${formLink}</small></span><span class="admin-status ${draft ? "admin-status--draft" : ""}">${draft ? "Draft" : form.active === false ? "Paused" : "Live"}</span><span class="admin-list-actions"><button type="button" class="admin-list-action" data-view-form="${escapeHtml(form._id)}">Responses</button><button type="button" class="admin-list-action" data-edit-form="${escapeHtml(form._id)}">Edit</button>${draft ? `<button type="button" class="admin-list-action" data-publish-form="${escapeHtml(publishId)}">Publish</button>` : ""}<button type="button" class="admin-list-action admin-list-action--delete" data-delete-form="${escapeHtml(form._id)}">Delete</button></span></div>`;
       }).join("")}</div>`
     : `<div class="admin-empty"><span class="admin-empty-mark">＋</span><h2>No forms yet</h2><p>Create a reusable form, choose its fields, and publish it as a page or popup on a news story, service, project, or website page.</p><button class="admin-button admin-button--primary" type="button" data-form-action="new">Create your first form</button></div>`;
-  const submissionsContent = state.submissions.length
-    ? `<div class="admin-submission-list">${state.submissions.map((submission) => {
+  const submissionsContent = visibleSubmissions.length
+    ? `<div class="admin-submission-list">${visibleSubmissions.map((submission) => {
         const submitted = submission.submittedAt ? new Date(submission.submittedAt).toLocaleString() : "Date unavailable";
         const responses = (submission.responses ?? []).map((response) => {
           const assetId = response.file?.asset?._ref;
@@ -400,9 +423,19 @@ function formsDashboard(): string {
           ? submission.sourcePath
           : "";
         return `<article class="admin-submission-card"><header><div><p class="admin-eyebrow">${escapeHtml(submission.formTitle || "Website form")}</p><h2>${escapeHtml(submitted)}</h2>${source ? `<a href="${escapeHtml(source)}" target="_blank" rel="noreferrer">${escapeHtml(source)}</a>` : ""}</div><span class="admin-status ${submission.status === "new" ? "admin-status--draft" : ""}">${escapeHtml(submission.status || "new")}</span></header><div class="admin-submission-answers">${responses || "<p>No answers saved.</p>"}</div><footer><label class="admin-field"><span>Inbox status</span><select data-submission-status="${escapeHtml(submission._id)}"><option value="new" ${submission.status === "new" ? "selected" : ""}>New</option><option value="read" ${submission.status === "read" ? "selected" : ""}>Read</option><option value="archived" ${submission.status === "archived" ? "selected" : ""}>Archived</option></select></label><div class="admin-form-actions"><button class="admin-button admin-button--secondary" type="button" data-save-submission="${escapeHtml(submission._id)}">Save status</button><button class="admin-button admin-button--danger" type="button" data-delete-submission="${escapeHtml(submission._id)}">Delete submission</button></div></footer></article>`;
-      }).join("")}</div>`
-    : `<div class="admin-empty"><span class="admin-empty-mark">↙</span><h2>Your inbox is clear</h2><p>Native form responses and uploaded documents appear here after someone submits a published form.</p></div>`;
-  return `<section class="admin-content"><div class="admin-page-heading"><div><p class="admin-eyebrow">COLLECT RESPONSES</p><h1>Forms &amp; inbox</h1><p class="admin-subtitle">Create branded forms, choose where they appear, and review visitor responses saved in Sanity.</p></div>${showingInbox ? "" : `<button class="admin-button admin-button--primary" type="button" data-form-action="new">＋ Create form</button>`}</div><div class="admin-form-hub-tabs" role="tablist" aria-label="Forms and submissions"><button type="button" role="tab" aria-selected="${!showingInbox}" class="${!showingInbox ? "is-active" : ""}" data-forms-tab="forms">Forms <span>${state.forms.length}</span></button><button type="button" role="tab" aria-selected="${showingInbox}" class="${showingInbox ? "is-active" : ""}" data-forms-tab="inbox">Submissions <span>${state.submissions.filter((item) => item.status === "new").length} new</span></button></div><div class="admin-form-note"><strong>Where submissions go:</strong> Native answers are saved as private Sanity drafts for this admin inbox. Uploaded files are Sanity CDN assets and anyone with the file URL may access them; do not request highly confidential documents. WhatsApp/email save first, then open the visitor’s contact app with a prepared message. Google Forms are embedded and collected by Google, not this inbox.</div>${showingInbox ? submissionsContent : formsContent}</section>`;
+      }).join("")}</div>${selectedForm && state.formSubmissionsError ? `<p class="admin-error" role="alert">${escapeHtml(state.formSubmissionsError)} <button class="admin-list-action" type="button" data-retry-form-submissions>Retry</button></p>` : ""}${selectedForm && state.loadingFormSubmissions ? `<p class="admin-form-submissions-loading" role="status">Loading more responses…</p>` : ""}`
+    : state.loadingFormSubmissions
+      ? `<div class="admin-empty"><span class="admin-spinner" aria-hidden="true"></span><h2>Loading responses</h2><p>Fetching the latest submissions for this form.</p></div>`
+      : state.formSubmissionsError
+        ? `<div class="admin-empty"><h2>Responses could not be loaded</h2><p class="admin-error" role="alert">${escapeHtml(state.formSubmissionsError)}</p><button class="admin-button admin-button--secondary" type="button" data-retry-form-submissions>Try again</button></div>`
+        : `<div class="admin-empty"><span class="admin-empty-mark">↙</span><h2>${selectedForm ? "No submissions yet" : "Your inbox is clear"}</h2><p>${selectedForm?.delivery === "googleForm" ? "This form is collected externally, so its responses are not available in the website inbox." : selectedForm ? "Responses submitted through this form will appear here, organized by field." : "Native form responses and uploaded documents appear here after someone submits a published form."}</p></div>`;
+  const formDetails = selectedForm
+    ? `<div class="admin-form-detail"><div class="admin-form-detail-heading"><div><p class="admin-eyebrow">FORM SUBMISSIONS</p><h2>${escapeHtml(selectedForm.title || "Untitled form")}</h2><p>Responses are linked to this form and shown with their submitted field labels.</p></div><div class="admin-form-detail-actions"><button class="admin-button admin-button--secondary" type="button" data-form-detail-back>All submissions</button><button class="admin-button admin-button--secondary" type="button" data-refresh-form-submissions>Refresh</button><button class="admin-button admin-button--secondary" type="button" data-edit-form="${escapeHtml(selectedForm._id)}">Edit form</button></div></div><div class="admin-form-detail-stats"><div><span>Total responses</span><strong>${state.selectedFormTotal}</strong></div><div><span>Loaded in this view</span><strong>${visibleSubmissions.length} of ${state.selectedFormTotal}</strong></div></div>${selectedForm.delivery === "googleForm" ? `<p class="admin-form-external-note">This form uses an external Google Forms destination. Responses are collected there and are not available in this website inbox.</p>` : ""}</div>`
+    : "";
+  const loadMore = selectedForm && state.selectedFormNextOffset !== null
+    ? `<div class="admin-form-load-more"><button class="admin-button admin-button--secondary" type="button" data-load-form-submissions ${state.loadingFormSubmissions ? "disabled" : ""}>${state.loadingFormSubmissions ? "Loading…" : `Load more responses (${state.selectedFormTotal - visibleSubmissions.length} remaining)`}</button></div>`
+    : "";
+  return `<section class="admin-content"><div class="admin-page-heading"><div><p class="admin-eyebrow">COLLECT RESPONSES</p><h1>Forms &amp; inbox</h1><p class="admin-subtitle">Create branded forms, choose where they appear, and review visitor responses.</p></div>${showingInbox ? "" : `<button class="admin-button admin-button--primary" type="button" data-form-action="new">＋ Create form</button>`}</div><div class="admin-form-hub-tabs" role="tablist" aria-label="Forms and submissions"><button type="button" role="tab" aria-selected="${!showingInbox}" class="${!showingInbox ? "is-active" : ""}" data-forms-tab="forms">Forms <span>${state.forms.length}</span></button><button type="button" role="tab" aria-selected="${showingInbox}" class="${showingInbox ? "is-active" : ""}" data-forms-tab="inbox">Submissions <span>${state.submissions.filter((item) => item.status === "new").length} new</span></button></div>${showingInbox ? `${formDetails}${submissionsContent}${loadMore}` : formsContent}</section>`;
 }
 
 function overview(): string {
@@ -573,6 +606,50 @@ async function loadForms(): Promise<void> {
   const result = await api<{ forms: AdminForm[]; submissions: FormSubmissionRecord[] }>("/api/admin/forms");
   state.forms = result.forms;
   state.submissions = result.submissions;
+}
+
+async function loadFormSubmissions(offset = 0): Promise<void> {
+  const selectedFormId = state.selectedFormId;
+  if (!selectedFormId) return;
+  state.loadingFormSubmissions = true;
+  state.formSubmissionsError = "";
+  render();
+  try {
+    const query = new URLSearchParams({
+      formId: canonicalFormId(selectedFormId),
+      offset: String(offset),
+    });
+    const result = await api<FormSubmissionPage>(`/api/admin/forms?${query}`);
+    if (state.selectedFormId !== selectedFormId) return;
+    state.selectedFormSubmissions = offset === 0
+      ? result.submissions
+      : [...state.selectedFormSubmissions, ...result.submissions];
+    state.selectedFormTotal = result.total;
+    state.selectedFormNextOffset = result.nextOffset;
+  } catch (error) {
+    if (state.selectedFormId !== selectedFormId) return;
+    state.formSubmissionsError = error instanceof Error
+      ? error.message
+      : "Submissions could not be loaded.";
+  } finally {
+    if (state.selectedFormId === selectedFormId) {
+      state.loadingFormSubmissions = false;
+      render();
+    }
+  }
+}
+
+function openFormSubmissions(form: AdminForm): void {
+  state.active = "forms";
+  state.formsTab = "inbox";
+  state.selectedFormId = form._id;
+  state.selectedFormSubmissions = [];
+  state.selectedFormTotal = 0;
+  state.selectedFormNextOffset = null;
+  state.loadingFormSubmissions = true;
+  state.formSubmissionsError = "";
+  render();
+  void loadFormSubmissions();
 }
 
 async function enterDashboard(): Promise<void> {
@@ -872,6 +949,7 @@ function refreshBuilderFields(dialog: HTMLDialogElement): void {
 function openFormEditor(form?: AdminForm): void {
   state.active = "forms";
   state.formsTab = "forms";
+  state.selectedFormId = null;
   state.editing = null;
   state.editingForm = form ?? {
     _id: "",
@@ -978,6 +1056,10 @@ async function deleteForm(id: string): Promise<void> {
       body: JSON.stringify({ action: "delete", id }),
     });
     state.editingForm = null;
+    if (state.selectedFormId === id) {
+      state.selectedFormId = null;
+      state.formsTab = "forms";
+    }
     await loadForms();
     render();
     showToast("Form deleted.");
@@ -996,7 +1078,8 @@ async function saveSubmissionStatus(id: string): Promise<void> {
       body: JSON.stringify({ action: "setSubmissionStatus", id, status: select.value }),
     });
     await loadForms();
-    render();
+    if (state.selectedFormId) await loadFormSubmissions();
+    else render();
     showToast("Inbox status updated.");
   } catch (error) {
     showToast(error instanceof Error ? error.message : "The inbox status could not be updated.");
@@ -1004,7 +1087,7 @@ async function saveSubmissionStatus(id: string): Promise<void> {
 }
 
 async function deleteSubmission(id: string): Promise<void> {
-  const submission = state.submissions.find((item) => item._id === id);
+  const submission = [...state.submissions, ...state.selectedFormSubmissions].find((item) => item._id === id);
   if (!submission) return;
   const label = submission.formTitle || "this form";
   if (!window.confirm(`Permanently delete this submission to “${label}”? This cannot be undone.`)) return;
@@ -1015,7 +1098,8 @@ async function deleteSubmission(id: string): Promise<void> {
       body: JSON.stringify({ action: "deleteSubmission", id }),
     });
     await loadForms();
-    render();
+    if (state.selectedFormId) await loadFormSubmissions();
+    else render();
     showToast("Submission deleted.");
   } catch (error) {
     showToast(error instanceof Error ? error.message : "The submission could not be deleted.");
@@ -1044,7 +1128,7 @@ async function upload(file: File, key: string, input: HTMLInputElement): Promise
           : `<video class="admin-video-preview" controls width="640" height="360" playsinline preload="none" src="${escapeHtml(result.asset.url)}" aria-label="Uploaded video preview"></video>`;
     }
     renderLivePreview();
-    showToast("Media uploaded to Sanity.");
+    showToast("Media uploaded.");
   } catch (error) {
     showToast(error instanceof Error ? error.message : "Upload failed.");
     input.value = "";
@@ -1097,7 +1181,10 @@ function navigateToSection(destination: AdminSection): void {
   state.uploads = {};
   state.editingForm = null;
   state.builderFields = [];
-  if (destination === "forms") state.formsTab = "forms";
+  if (destination === "forms") {
+    state.formsTab = "forms";
+    state.selectedFormId = null;
+  }
   state.returnFocusId = destination;
   state.editing =
     destination === "homePage"
@@ -1186,6 +1273,23 @@ function bindShellEvents(): void {
       if (form) openFormEditor(form);
     });
   });
+  root?.querySelectorAll<HTMLButtonElement>("[data-view-form]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const form = state.forms.find((item) => item._id === button.dataset.viewForm);
+      if (form) openFormSubmissions(form);
+    });
+  });
+  root?.querySelector<HTMLButtonElement>("[data-load-form-submissions]")?.addEventListener("click", () => {
+    if (state.selectedFormNextOffset !== null) {
+      void loadFormSubmissions(state.selectedFormNextOffset);
+    }
+  });
+  root?.querySelector<HTMLButtonElement>("[data-retry-form-submissions]")?.addEventListener("click", () => {
+    void loadFormSubmissions();
+  });
+  root?.querySelector<HTMLButtonElement>("[data-refresh-form-submissions]")?.addEventListener("click", () => {
+    void loadFormSubmissions();
+  });
   root?.querySelectorAll<HTMLButtonElement>("[data-publish-form]").forEach((button) => {
     button.addEventListener("click", () => {
       if (button.dataset.publishForm) void publishFormDraft(button.dataset.publishForm);
@@ -1199,8 +1303,13 @@ function bindShellEvents(): void {
   root?.querySelectorAll<HTMLButtonElement>("[data-forms-tab]").forEach((button) => {
     button.addEventListener("click", () => {
       state.formsTab = button.dataset.formsTab === "inbox" ? "inbox" : "forms";
+      state.selectedFormId = null;
       render();
     });
+  });
+  root?.querySelector<HTMLButtonElement>("[data-form-detail-back]")?.addEventListener("click", () => {
+    state.selectedFormId = null;
+    render();
   });
   root?.querySelectorAll<HTMLButtonElement>("[data-save-submission]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -1263,7 +1372,7 @@ function bindShellEvents(): void {
 async function deleteDocument(doc = state.editing): Promise<void> {
   if (!doc || doc._type === "homePage") return;
   const title = documentTitle(doc);
-  if (!window.confirm(`Delete “${title}”? This permanently removes it from Sanity and the live website.`)) return;
+  if (!window.confirm(`Delete “${title}”? This permanently removes it from the live website.`)) return;
   try {
     await api("/api/admin/content", {
       method: "POST",
@@ -1285,6 +1394,11 @@ async function logout(): Promise<void> {
     state.documents = [];
     state.forms = [];
     state.submissions = [];
+    state.selectedFormId = null;
+    state.selectedFormSubmissions = [];
+    state.selectedFormTotal = 0;
+    state.selectedFormNextOffset = null;
+    state.formSubmissionsError = "";
     state.editing = null;
     state.editingForm = null;
     renderLogin();

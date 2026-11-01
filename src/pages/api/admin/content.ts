@@ -302,7 +302,7 @@ function prepareDocument(
 export const GET: APIRoute = async ({ request }) => {
   if (!(await verifyAdminSession(request))) return unauthorizedResponse();
   const client = createAdminSanityClient();
-  if (!client) return Response.json({ error: "Sanity write access is not configured." }, { status: 503 });
+  if (!client) return Response.json({ error: "Content management is not configured on this website." }, { status: 503 });
 
   const type = new URL(request.url).searchParams.get("type");
   if (type && type !== "all" && !validContentType(type)) {
@@ -346,7 +346,7 @@ export const POST: APIRoute = async ({ request }) => {
     return Response.json({ error: "Request origin not allowed." }, { status: 403 });
   }
   const client = createAdminSanityClient();
-  if (!client) return Response.json({ error: "Sanity write access is not configured." }, { status: 503 });
+  if (!client) return Response.json({ error: "Content management is not configured on this website." }, { status: 503 });
 
   let body: {
     action?: unknown;

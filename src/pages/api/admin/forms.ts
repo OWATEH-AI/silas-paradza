@@ -8,6 +8,7 @@ import {
 
 const fieldTypes = ["text", "email", "tel", "url", "textarea", "select", "checkbox", "file"] as const;
 const contentTypes = ["article", "service", "project", "page"] as const;
+const submissionPageSize = 50;
 
 function errorResponse(error: unknown): Response {
   console.error("Admin forms API failed.", error);
@@ -145,8 +146,42 @@ function prepareForm(fields: Record<string, unknown>, id: string, existing?: Rec
 export const GET: APIRoute = async ({ request }) => {
   if (!(await verifyAdminSession(request))) return unauthorizedResponse();
   const client = createAdminSanityClient();
-  if (!client) return Response.json({ error: "Sanity write access is not configured." }, { status: 503 });
+  if (!client) return Response.json({ error: "Form management is not configured on this website." }, { status: 503 });
   try {
+    const url = new URL(request.url);
+    const requestedFormId = url.searchParams.get("formId");
+    if (requestedFormId) {
+      if (!validId(requestedFormId)) {
+        return Response.json({ error: "Choose a valid form to view its submissions." }, { status: 400 });
+      }
+      const formId = requestedFormId.replace(/^drafts\./, "");
+      const parsedOffset = Number(url.searchParams.get("offset") ?? 0);
+      if (!Number.isSafeInteger(parsedOffset) || parsedOffset < 0 || parsedOffset > 1_000_000) {
+        return Response.json({ error: "Choose a valid submission page." }, { status: 400 });
+      }
+      const [submissions, total] = await Promise.all([
+        client.fetch(
+          `*[_type == "formSubmission" && formId == $formId] | order(submittedAt desc, _id desc)[$start...$end] {
+            ..., responses[]{..., "file": file{..., "asset": asset->{_ref, mimeType}}}
+          }`,
+          { formId, start: parsedOffset, end: parsedOffset + submissionPageSize },
+          { perspective: "drafts", useCdn: false },
+        ),
+        client.fetch<number>(
+          'count(*[_type == "formSubmission" && formId == $formId])',
+          { formId },
+          { perspective: "drafts", useCdn: false },
+        ),
+      ]);
+      const nextOffset = parsedOffset + submissions.length < total
+        ? parsedOffset + submissions.length
+        : null;
+      return Response.json(
+        { submissions, total, nextOffset },
+        { headers: { "Cache-Control": "no-store" } },
+      );
+    }
+
     const [forms, submissions, draftIds] = await Promise.all([
       client.fetch<Array<{ _id: string } & Record<string, unknown>>>(
         `*[_type == "formDefinition"] | order(_updatedAt desc)[0...200] {
@@ -187,7 +222,7 @@ export const POST: APIRoute = async ({ request }) => {
     return Response.json({ error: "Request origin not allowed." }, { status: 403 });
   }
   const client = createAdminSanityClient();
-  if (!client) return Response.json({ error: "Sanity write access is not configured." }, { status: 503 });
+  if (!client) return Response.json({ error: "Form management is not configured on this website." }, { status: 503 });
 
   let body: Record<string, unknown>;
   try {
@@ -224,6 +259,15 @@ export const POST: APIRoute = async ({ request }) => {
     if (body.action === "delete") {
       if (!validId(body.id)) return Response.json({ error: "Choose a valid form to delete." }, { status: 400 });
       const id = body.id.replace(/^drafts\./, "");
+      const [draftDocument, publishedDocument] = await Promise.all([
+        client.getDocument(`drafts.${id}`),
+        client.getDocument(id),
+      ]);
+      const draft = draftDocument as Record<string, unknown> | null;
+      const published = publishedDocument as Record<string, unknown> | null;
+      if (![draft, published].some((document) => document?._type === "formDefinition")) {
+        return Response.json({ error: "That form could not be found." }, { status: 404 });
+      }
       await client.transaction().delete(`drafts.${id}`).delete(id).commit();
       return Response.json({ deleted: true });
     }

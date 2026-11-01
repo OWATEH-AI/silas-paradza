@@ -391,6 +391,18 @@ html[data-theme="dark"] .admin-create-dialog::backdrop { background: rgba(2,7,10
 .admin-form-hub-tabs button { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; padding: 0 14px; border: 0; border-bottom: 2px solid transparent; color: var(--text-soft); background: transparent; font-size: 12px; font-weight: 650; }
 .admin-form-hub-tabs button.is-active { color: #9c7846; border-bottom-color: var(--gold); }
 .admin-form-hub-tabs button span { padding: 3px 7px; border-radius: 999px; background: var(--surface-soft); font-size: 10px; }
+.admin-form-detail { display: grid; gap: 16px; margin-bottom: 20px; }
+.admin-form-detail-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface-raised); }
+.admin-form-detail-heading h2 { margin: 5px 0; font: 700 17px Manrope,sans-serif; }
+.admin-form-detail-heading p:not(.admin-eyebrow) { margin: 0; color: var(--text-soft); font-size: 11px; line-height: 1.6; }
+.admin-form-detail-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.admin-form-detail-stats { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.admin-form-detail-stats > div { display: grid; gap: 7px; padding: 15px 17px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-raised); }
+.admin-form-detail-stats span { color: var(--text-soft); font-size: 10px; }
+.admin-form-detail-stats strong { font: 700 20px Manrope,sans-serif; }
+.admin-form-external-note { margin: 0; padding: 12px 15px; border: 1px solid var(--border); border-radius: 8px; color: var(--text-soft); background: var(--surface-raised); font-size: 11px; line-height: 1.6; }
+.admin-form-load-more { display: flex; justify-content: center; padding: 18px 0; }
+.admin-form-submissions-loading { margin: 0; color: var(--text-soft); font-size: 11px; text-align: center; }
 .admin-form-note { margin: 15px 0 20px; padding: 14px 16px; border: 1px solid color-mix(in srgb,var(--gold) 28%,var(--border)); border-radius: 8px; color: var(--text-soft); background: color-mix(in srgb,var(--gold-soft) 55%,var(--surface-raised)); font-size: 11px; line-height: 1.7; }
 .admin-form-note strong { color: var(--text); }
 .admin-submission-list { display: grid; gap: 14px; }
@@ -430,6 +442,12 @@ html[data-theme="dark"] .admin-create-dialog::backdrop { background: rgba(2,7,10
 .admin-form-builder-message[role="alert"] { color: #b94a3f; }
 
 @media (max-width: 760px) {
+  .admin-form-list-row { flex-wrap: wrap; }
+  .admin-form-list-row .admin-list-text { flex-basis: calc(100% - 48px); }
+  .admin-form-list-row .admin-list-actions { width: 100%; justify-content: flex-end; }
+  .admin-form-detail-heading { flex-direction: column; }
+  .admin-form-detail-actions { width: 100%; }
+  .admin-form-detail-actions .admin-button { flex: 1; min-height: 44px; }
   .admin-form-builder-dialog { width: 100%; }
   .admin-form-builder-header { padding: 20px 18px 15px; }
   .admin-form-builder-body { padding: 12px 18px; }

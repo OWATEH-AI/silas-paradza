@@ -14,7 +14,7 @@ export const POST: APIRoute = async ({ request }) => {
     return Response.json({ error: "Request origin not allowed." }, { status: 403 });
   }
   const client = createAdminSanityClient();
-  if (!client) return Response.json({ error: "Sanity write access is not configured." }, { status: 503 });
+  if (!client) return Response.json({ error: "Media uploads are not configured on this website." }, { status: 503 });
   const contentLength = Number(request.headers.get("content-length"));
   if (Number.isFinite(contentLength) && contentLength > maximumUploadSize + 1024 * 1024) {
     return Response.json({ error: "Files must be smaller than 90 MB." }, { status: 413 });
